@@ -36,20 +36,20 @@ Copier `.env.example` vers `.env.local`, puis renseigner :
 
 - `MYSQL_URL` : URL de connexion MySQL. `DATABASE_URL` est également acceptée.
 - `PORT` : port HTTP du service, `8080` par défaut.
-- `ADMIN_USERNAME` : identifiant de connexion, `admin` par défaut.
-- `ADMIN_DISPLAY_NAME` : nom affiché du premier super-administrateur.
-- `ADMIN_PASSWORD` : mot de passe initial d'au moins 12 caractères.
+- `ADMIN_USERNAME` : identifiant de secours utilisé par le bootstrap applicatif.
+- `ADMIN_DISPLAY_NAME` : nom affiché du compte de secours.
+- `ADMIN_PASSWORD` : mot de passe de secours facultatif, d'au moins 12 caractères.
 - `ADMIN_SESSION_SECRET` : secret aléatoire d'au moins 32 caractères, distinct du mot de passe.
 
 Le dashboard est accessible sur [http://localhost:8080/admin](http://localhost:8080/admin). Le schéma est créé automatiquement; sa définition complète est disponible dans `db/schema.sql`.
 
-`npm run db:prepare` applique uniquement le schéma et les migrations, puis crée le premier super-administrateur si `admin_users` est vide. Cette commande ne remplit et ne synchronise aucun contenu éditorial.
+`npm run db:prepare` applique uniquement le schéma et les migrations. La migration SQL `005_sql_super_admin` crée ou restaure une seule fois le compte `admin` avec le rôle `super_admin`; elle ne réinitialise jamais ce compte lors des exécutions suivantes. Les identifiants temporaires de cette installation sont conservés uniquement dans le fichier local ignoré `initial-admin-credentials.txt`. Après la première connexion, changez immédiatement le mot de passe dans **Compte**. Cette commande ne remplit et ne synchronise aucun contenu éditorial.
 
 Après la première connexion, le super-administrateur utilise **Remplir le site une première fois** sur la vue d'ensemble. Cette action importe en une seule opération les joueurs, le staff, les actualités et les médias. Son état est enregistré dans `content_imports`; après réussite, le bouton disparaît et l'import ne peut plus être relancé. Les déploiements suivants ne modifient jamais ces contenus.
 
 Les photos présentes au moment de l'import sont déjà copiées dans `public/content-images` et associées aux contenus par `src/data/initial-image-manifest.json`. Toutes les URL d'image et leurs textes alternatifs restent modifiables dans le dashboard, y compris les écussons, les bannières, les visuels de l'accueil et l'image de connexion. `npm run assets:download` sert uniquement à renouveler ces fichiers sources avant un commit; cette commande ne fait pas partie du déploiement.
 
-Le premier compte est créé avec `ADMIN_USERNAME`, `ADMIN_DISPLAY_NAME` et `ADMIN_PASSWORD`. Ces variables ne réinitialisent jamais un compte existant. Le super-administrateur peut ensuite gérer les autres accès dans `/admin/administrateurs`; les mots de passe sont hachés avec bcrypt et les opérations sensibles sont consignées dans `admin_audit_log`.
+Le bootstrap applicatif avec `ADMIN_USERNAME`, `ADMIN_DISPLAY_NAME` et `ADMIN_PASSWORD` reste disponible comme solution de secours. Ces variables ne réinitialisent jamais un compte existant. Le super-administrateur peut ensuite changer son mot de passe dans `/admin/compte` et gérer les autres accès dans `/admin/administrateurs`; les mots de passe sont hachés avec bcrypt et les opérations sensibles sont consignées dans `admin_audit_log`.
 
 ### Structure MySQL
 
@@ -111,7 +111,7 @@ Les commandes déjà définies dans `package.json` sont :
 2. Ouvrir le service Next.js puis **Variables**.
 3. Ajouter une référence vers l'URL MySQL sous le nom `MYSQL_URL`. Railway expose généralement `${{MySQL.MYSQL_URL}}` lorsque le service s'appelle `MySQL`.
 4. Ajouter `PORT=8080`.
-5. Ajouter `ADMIN_USERNAME`, `ADMIN_DISPLAY_NAME`, `ADMIN_PASSWORD` et `ADMIN_SESSION_SECRET` comme variables privées.
+5. Ajouter `ADMIN_SESSION_SECRET` comme variable privée d'au moins 32 caractères. Les variables `ADMIN_USERNAME`, `ADMIN_DISPLAY_NAME` et `ADMIN_PASSWORD` sont seulement nécessaires au bootstrap de secours.
 6. Redéployer le service puis ouvrir `/admin`.
 
 Railway exécute automatiquement `npm run db:prepare` avant chaque démarrage grâce à `railway.json`. Le déploiement applique donc le schéma et garantit le premier super-administrateur, sans importer ni modifier les contenus éditoriaux. Après le tout premier déploiement, ouvrez `/admin` avec ce compte et cliquez une seule fois sur **Remplir le site une première fois**.

@@ -23,6 +23,26 @@ CREATE TABLE IF NOT EXISTS admin_users (
     FOREIGN KEY (created_by_admin_id) REFERENCES admin_users (id) ON DELETE SET NULL
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
+-- Crée ou restaure une seule fois le compte initial; les passages suivants préservent toute modification.
+INSERT INTO admin_users (username, display_name, password_hash, role, is_active)
+SELECT
+  'admin',
+  'Super administrateur',
+  '$2b$12$HRc3yeocxwI.vdKrYx87cuIByhyGkpu0Ag/kf0Sr9zRn7edVpd3lK',
+  'super_admin',
+  TRUE
+WHERE NOT EXISTS (
+  SELECT 1 FROM schema_migrations WHERE migration_key = '005_sql_super_admin'
+)
+ON DUPLICATE KEY UPDATE
+  display_name = VALUES(display_name),
+  password_hash = VALUES(password_hash),
+  role = 'super_admin',
+  is_active = TRUE,
+  session_version = session_version + 1;
+
+INSERT IGNORE INTO schema_migrations (migration_key) VALUES ('005_sql_super_admin');
+
 CREATE TABLE IF NOT EXISTS content_imports (
   import_key VARCHAR(100) NOT NULL,
   status ENUM('running', 'completed', 'failed') NOT NULL,

@@ -36,6 +36,7 @@ yarn-error.log*
 
 # local credentials
 /github.txt
+/initial-admin-credentials.txt
 .secrets/
 *.key
 *.secret

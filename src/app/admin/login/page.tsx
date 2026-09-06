@@ -35,7 +35,7 @@ export default async function AdminLoginPage({
           {!configured && (
             <div className="admin-notice admin-notice--error" role="alert">
               <ShieldAlert aria-hidden="true" size={18} />
-              Vérifiez MySQL, <code>ADMIN_PASSWORD</code> et <code>ADMIN_SESSION_SECRET</code> pour créer le premier super-admin.
+              Vérifiez la liaison MySQL et <code>ADMIN_SESSION_SECRET</code> pour activer le compte super-admin initial.
             </div>
           )}
           {params.error === "credentials" && (

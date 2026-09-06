@@ -8,10 +8,10 @@ async function main() {
 
   try {
     await ensureCmsSchema();
-    const superAdminCreated = await bootstrapSuperAdmin();
+    await bootstrapSuperAdmin();
 
     console.log("Base MySQL prête.");
-    console.log(`Super-admin initial : ${superAdminCreated ? "créé" : "déjà présent"}`);
+    console.log("Super-admin initial : disponible.");
     console.log("Contenus éditoriaux : gérés depuis le dashboard, sans import au déploiement.");
   } finally {
     await closeDatabasePool();
