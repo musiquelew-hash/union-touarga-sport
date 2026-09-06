@@ -4,7 +4,7 @@ import { clearCollectionAction, syncCollectionAction } from "@/app/admin/actions
 import { AdminNotice } from "@/components/admin/admin-notice";
 import { AdminNewRecord, AdminRecordEditor } from "@/components/admin/admin-record-form";
 import { AdminSubmitButton } from "@/components/admin/admin-submit-button";
-import { cmsKinds, getCmsCategoryAdminSafe, type CmsKind } from "@/lib/cms-db";
+import { cmsKinds, getCmsCategoryAdminSafe, type CmsKind } from "@/lib/relational-cms-db";
 import type {
   MediaSummary,
   NewsSummary,

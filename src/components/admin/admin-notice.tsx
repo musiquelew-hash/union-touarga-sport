@@ -11,9 +11,17 @@ export function AdminNotice({ saved, error }: { saved?: string; error?: string }
   }
 
   if (error) {
-    const message = error === "validation"
-      ? "Certains champs sont incomplets ou invalides. Vérifiez le formulaire."
-      : "La base MySQL n’est pas joignable. Vérifiez sa liaison et ses variables Railway.";
+    const messages: Record<string, string> = {
+      validation: "Certains champs sont incomplets ou invalides. Vérifiez le formulaire.",
+      duplicate: "Cet identifiant administrateur existe déjà.",
+      "last-super-admin": "Le dernier super-administrateur actif doit être conservé.",
+      "self-change": "Vous ne pouvez pas suspendre ou supprimer votre propre compte.",
+      "not-found": "Ce compte administrateur n’existe plus.",
+      "current-password": "Le mot de passe actuel est incorrect.",
+      forbidden: "Cette section est réservée aux super-administrateurs.",
+      database: "La base MySQL n’est pas joignable. Vérifiez sa liaison et ses variables Railway.",
+    };
+    const message = messages[error] || messages.database;
     return (
       <div className="admin-notice admin-notice--error" role="alert">
         <AlertCircle aria-hidden="true" size={18} />

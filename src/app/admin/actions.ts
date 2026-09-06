@@ -8,19 +8,27 @@ import {
   clearCmsCategory,
   cmsKinds,
   deleteCmsRecord,
-  replaceCmsCategory,
   saveCmsSetting,
   type CmsKind,
   upsertCmsRecord,
-} from "@/lib/cms-db";
+} from "@/lib/relational-cms-db";
 import {
   clearAdminSession,
   createAdminSession,
   isAdminAuthConfigured,
   requireAdmin,
+  requireSuperAdmin,
   verifyAdminCredentials,
 } from "@/lib/admin-auth";
-import { getOfficialCmsSeedData, type OfficialCmsSeedData } from "@/lib/official-cms-source";
+import {
+  AdminAccountError,
+  adminRoles,
+  changeAdminPassword,
+  createAdminUser,
+  deleteAdminUser,
+  updateAdminUser,
+} from "@/lib/admin-users";
+import { replaceAllOfficialCmsData, replaceOfficialCmsCategory } from "@/lib/official-cms-sync";
 import { defaultSiteContent, type SiteContent } from "@/lib/site-content";
 import {
   type MediaSummary,
@@ -93,11 +101,13 @@ export async function loginAction(formData: FormData) {
     .safeParse({ username: text(formData, "username"), password: text(formData, "password") });
 
   if (!isAdminAuthConfigured()) redirect("/admin/login?error=setup");
-  if (!credentials.success || !verifyAdminCredentials(credentials.data.username, credentials.data.password)) {
+  if (!credentials.success) redirect("/admin/login?error=credentials");
+  const admin = await verifyAdminCredentials(credentials.data.username, credentials.data.password);
+  if (!admin) {
     redirect("/admin/login?error=credentials");
   }
 
-  await createAdminSession(credentials.data.username);
+  await createAdminSession(admin);
   redirect("/admin");
 }
 
@@ -131,7 +141,7 @@ const siteContentSchema = z.object({
 });
 
 export async function saveSiteContentAction(formData: FormData) {
-  await requireAdmin();
+  const admin = await requireAdmin();
   const raw: SiteContent = {
     stripPrimary: text(formData, "stripPrimary"),
     stripSecondary: text(formData, "stripSecondary"),
@@ -159,7 +169,7 @@ export async function saveSiteContentAction(formData: FormData) {
   const parsed = siteContentSchema.safeParse(raw);
   if (!parsed.success) redirect("/admin/contenu?error=validation");
 
-  return persist(() => saveCmsSetting("site-content", parsed.data), "/admin/contenu");
+  return persist(() => saveCmsSetting("site-content", parsed.data, admin.id), "/admin/contenu");
 }
 
 const playerSchema = z.object({
@@ -181,7 +191,7 @@ const playerSchema = z.object({
 });
 
 export async function savePlayerAction(formData: FormData) {
-  await requireAdmin();
+  const admin = await requireAdmin();
   const parsed = playerSchema.safeParse({
     id: numberOr(formData, "id", generatedNumericId()),
     name: text(formData, "name"),
@@ -209,6 +219,7 @@ export async function savePlayerAction(formData: FormData) {
       data: parsed.data,
       published: published(formData),
       sortOrder: numberOr(formData, "sortOrder", 0),
+      actorAdminId: admin.id,
     }),
     collectionRoutes.player,
   );
@@ -223,7 +234,7 @@ const staffSchema = z.object({
 });
 
 export async function saveStaffAction(formData: FormData) {
-  await requireAdmin();
+  const admin = await requireAdmin();
   const parsed = staffSchema.safeParse({
     id: numberOr(formData, "id", generatedNumericId()),
     name: text(formData, "name"),
@@ -241,6 +252,7 @@ export async function saveStaffAction(formData: FormData) {
       data: parsed.data,
       published: published(formData),
       sortOrder: numberOr(formData, "sortOrder", 0),
+      actorAdminId: admin.id,
     }),
     collectionRoutes.staff,
   );
@@ -256,7 +268,7 @@ const newsSchema = z.object({
 });
 
 export async function saveNewsAction(formData: FormData) {
-  await requireAdmin();
+  const admin = await requireAdmin();
   const dateValue = text(formData, "dateTime");
   const parsed = newsSchema.safeParse({
     id: numberOr(formData, "id", generatedNumericId()),
@@ -276,6 +288,7 @@ export async function saveNewsAction(formData: FormData) {
       data: parsed.data,
       published: published(formData),
       sortOrder: numberOr(formData, "sortOrder", -(parsed.data.timestamp || 0)),
+      actorAdminId: admin.id,
     }),
     collectionRoutes.news,
   );
@@ -290,7 +303,7 @@ const mediaSchema = z.object({
 });
 
 export async function saveMediaAction(formData: FormData) {
-  await requireAdmin();
+  const admin = await requireAdmin();
   const dateValue = text(formData, "dateTime");
   const key = recordKey(formData);
   const parsed = mediaSchema.safeParse({
@@ -309,6 +322,7 @@ export async function saveMediaAction(formData: FormData) {
       data: parsed.data,
       published: published(formData),
       sortOrder: numberOr(formData, "sortOrder", -(parsed.data.timestamp || 0)),
+      actorAdminId: admin.id,
     }),
     collectionRoutes.media,
   );
@@ -331,37 +345,117 @@ export async function clearCollectionAction(formData: FormData) {
   return persist(() => clearCmsCategory(kind.data), collectionRoutes[kind.data]);
 }
 
-function recordsForKind(kind: CmsKind, data: OfficialCmsSeedData) {
-  switch (kind) {
-    case "player":
-      return data.players.map((item, index) => ({ key: String(item.id), data: item, sortOrder: index }));
-    case "staff":
-      return data.staff.map((item, index) => ({ key: String(item.id), data: item, sortOrder: index }));
-    case "news":
-      return data.news.map((item, index) => ({ key: String(item.id), data: item, sortOrder: index }));
-    case "media":
-      return data.media.map((item, index) => ({ key: item.id, data: item, sortOrder: index }));
-  }
-}
-
 export async function syncCollectionAction(formData: FormData) {
   await requireAdmin();
   const kind = z.enum(cmsKinds).safeParse(text(formData, "kind"));
   if (!kind.success) redirect("/admin?error=validation");
 
-  return persist(async () => {
-    const officialData = await getOfficialCmsSeedData();
-    const records = recordsForKind(kind.data, officialData);
-    await replaceCmsCategory<unknown>(kind.data, records);
-  }, collectionRoutes[kind.data]);
+  return persist(() => replaceOfficialCmsCategory(kind.data), collectionRoutes[kind.data]);
 }
 
 export async function syncAllCollectionsAction() {
   await requireAdmin();
-  return persist(async () => {
-    const officialData = await getOfficialCmsSeedData();
-    for (const kind of cmsKinds) {
-      await replaceCmsCategory<unknown>(kind, recordsForKind(kind, officialData));
-    }
-  }, "/admin");
+  return persist(() => replaceAllOfficialCmsData(), "/admin");
+}
+
+const adminAccountSchema = z.object({
+  username: z.string().trim().min(3).max(100).regex(/^[a-zA-Z0-9._-]+$/),
+  displayName: z.string().trim().min(2).max(160),
+  role: z.enum(adminRoles),
+  active: z.boolean(),
+});
+
+const createAdminSchema = adminAccountSchema.extend({
+  password: z.string().min(12).max(200),
+});
+
+const updateAdminSchema = adminAccountSchema.extend({
+  id: z.number().int().positive(),
+  password: z.string().max(200).refine((value) => value.length === 0 || value.length >= 12),
+});
+
+function adminAccountError(error: unknown): never {
+  if (error instanceof AdminAccountError) {
+    redirect(`/admin/administrateurs?error=${error.code}`);
+  }
+  console.error("[ADMIN] Gestion de compte impossible", error);
+  redirect("/admin/administrateurs?error=database");
+}
+
+export async function createAdminAction(formData: FormData) {
+  const actor = await requireSuperAdmin();
+  const parsed = createAdminSchema.safeParse({
+    username: text(formData, "username"),
+    displayName: text(formData, "displayName"),
+    password: text(formData, "password"),
+    role: text(formData, "role"),
+    active: formData.get("active") === "on",
+  });
+  if (!parsed.success) redirect("/admin/administrateurs?error=validation");
+
+  try {
+    await createAdminUser(parsed.data, actor.id);
+  } catch (error) {
+    adminAccountError(error);
+  }
+  revalidatePath("/admin/administrateurs");
+  redirect("/admin/administrateurs?saved=created");
+}
+
+export async function updateAdminAction(formData: FormData) {
+  const actor = await requireSuperAdmin();
+  const parsed = updateAdminSchema.safeParse({
+    id: numberOr(formData, "id", 0),
+    username: text(formData, "username"),
+    displayName: text(formData, "displayName"),
+    password: text(formData, "password"),
+    role: text(formData, "role"),
+    active: formData.get("active") === "on",
+  });
+  if (!parsed.success) redirect("/admin/administrateurs?error=validation");
+
+  try {
+    await updateAdminUser(parsed.data.id, parsed.data, actor.id);
+  } catch (error) {
+    adminAccountError(error);
+  }
+  revalidatePath("/admin/administrateurs");
+  redirect("/admin/administrateurs?saved=updated");
+}
+
+export async function deleteAdminAction(formData: FormData) {
+  const actor = await requireSuperAdmin();
+  const id = z.number().int().positive().safeParse(numberOr(formData, "id", 0));
+  if (!id.success) redirect("/admin/administrateurs?error=validation");
+
+  try {
+    await deleteAdminUser(id.data, actor.id);
+  } catch (error) {
+    adminAccountError(error);
+  }
+  revalidatePath("/admin/administrateurs");
+  redirect("/admin/administrateurs?saved=deleted");
+}
+
+const passwordChangeSchema = z
+  .object({
+    currentPassword: z.string().min(1).max(200),
+    newPassword: z.string().min(12).max(200),
+    confirmPassword: z.string().min(12).max(200),
+  })
+  .refine((data) => data.newPassword === data.confirmPassword);
+
+export async function changeOwnPasswordAction(formData: FormData) {
+  const admin = await requireAdmin();
+  const parsed = passwordChangeSchema.safeParse({
+    currentPassword: text(formData, "currentPassword"),
+    newPassword: text(formData, "newPassword"),
+    confirmPassword: text(formData, "confirmPassword"),
+  });
+  if (!parsed.success) redirect("/admin/compte?error=validation");
+
+  const changed = await changeAdminPassword(admin.id, parsed.data.currentPassword, parsed.data.newPassword);
+  if (!changed) redirect("/admin/compte?error=current-password");
+  await clearAdminSession();
+  redirect("/admin/login?passwordChanged=1");
 }

@@ -8,7 +8,7 @@ import {
   saveStaffAction,
 } from "@/app/admin/actions";
 import { AdminSubmitButton } from "@/components/admin/admin-submit-button";
-import type { CmsKind, CmsRecord } from "@/lib/cms-db";
+import type { CmsKind, CmsRecord } from "@/lib/relational-cms-db";
 import type {
   MediaSummary,
   NewsSummary,
@@ -224,7 +224,10 @@ export function AdminRecordEditor({ kind, record }: { kind: CmsKind; record: Cms
     <details className="admin-record">
       <summary>
         <span className={`admin-publish-dot${record.published ? " is-published" : ""}`} aria-hidden="true" />
-        <span><strong>{item.title}</strong><small>{item.meta}</small></span>
+        <span>
+          <strong>{item.title}</strong>
+          <small>{item.meta} · {record.syncWithSource ? "Mise à jour auto" : "Piloté par dashboard"}</small>
+        </span>
         <span className="admin-record__status">{record.published ? "Publié" : "Masqué"}</span>
       </summary>
       <div className="admin-record__body">

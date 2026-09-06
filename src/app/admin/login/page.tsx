@@ -2,16 +2,16 @@ import { ArrowRight, LockKeyhole, ShieldAlert } from "lucide-react";
 import Image from "next/image";
 import { redirect } from "next/navigation";
 import { loginAction } from "@/app/admin/actions";
-import { getAdminSession, isAdminAuthConfigured } from "@/lib/admin-auth";
+import { getAdminSession, isAdminAuthReady } from "@/lib/admin-auth";
 
 export default async function AdminLoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; passwordChanged?: string }>;
 }) {
   if (await getAdminSession()) redirect("/admin");
   const params = await searchParams;
-  const configured = isAdminAuthConfigured();
+  const configured = await isAdminAuthReady();
 
   return (
     <div className="admin-login">
@@ -19,19 +19,19 @@ export default async function AdminLoginPage({
         <Image src="/uts/crest-color.png" alt="Union Touarga Sport" width={96} height={112} priority />
         <span>Union Touarga Sport</span>
         <h1>Centre de gestion du club</h1>
-        <p>Contenu éditorial, effectif, calendrier, classement et publications réunis au même endroit.</p>
+        <p>Contenu éditorial, effectif, staff, comptes administrateurs et publications réunis au même endroit.</p>
       </section>
       <section className="admin-login__panel">
         <div className="admin-login__form-wrap">
           <LockKeyhole aria-hidden="true" size={28} />
           <p className="admin-kicker">Accès réservé</p>
           <h2>Administration</h2>
-          <p>Connectez-vous avec les identifiants définis dans les variables privées du déploiement.</p>
+          <p>Connectez-vous avec un compte administrateur actif enregistré dans MySQL.</p>
 
           {!configured && (
             <div className="admin-notice admin-notice--error" role="alert">
               <ShieldAlert aria-hidden="true" size={18} />
-              Définissez d’abord <code>ADMIN_PASSWORD</code> et <code>ADMIN_SESSION_SECRET</code>.
+              Vérifiez MySQL, <code>ADMIN_PASSWORD</code> et <code>ADMIN_SESSION_SECRET</code> pour créer le premier super-admin.
             </div>
           )}
           {params.error === "credentials" && (
@@ -42,6 +42,11 @@ export default async function AdminLoginPage({
           {params.error === "setup" && (
             <div className="admin-notice admin-notice--error" role="alert">
               L’authentification administrateur n’est pas encore configurée.
+            </div>
+          )}
+          {params.passwordChanged && (
+            <div className="admin-notice admin-notice--success" role="status">
+              Mot de passe modifié. Reconnectez-vous avec le nouveau mot de passe.
             </div>
           )}
 

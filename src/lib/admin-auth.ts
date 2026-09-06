@@ -3,15 +3,18 @@ import "server-only";
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import {
+  authenticateAdmin,
+  bootstrapSuperAdmin,
+  getActiveAdminUserById,
+  hasAdminUsers,
+  type AdminUser,
+} from "@/lib/admin-users";
+import { isDatabaseConfigured } from "@/lib/database";
 
 const ADMIN_COOKIE = "uts_admin_session";
 const SESSION_DURATION_SECONDS = 60 * 60 * 8;
-const MINIMUM_PASSWORD_LENGTH = 12;
 const MINIMUM_SESSION_SECRET_LENGTH = 32;
-
-function configuredUsername() {
-  return process.env.ADMIN_USERNAME || "admin";
-}
 
 function sessionSecret() {
   return process.env.ADMIN_SESSION_SECRET || "";
@@ -28,27 +31,34 @@ function sign(payload: string) {
 }
 
 export function isAdminAuthConfigured() {
-  const password = process.env.ADMIN_PASSWORD || "";
   const secret = sessionSecret();
-  return (
-    password.length >= MINIMUM_PASSWORD_LENGTH &&
-    secret.length >= MINIMUM_SESSION_SECRET_LENGTH &&
-    secret !== password
-  );
+  return isDatabaseConfigured() && secret.length >= MINIMUM_SESSION_SECRET_LENGTH;
 }
 
-export function verifyAdminCredentials(username: string, password: string) {
-  const expectedPassword = process.env.ADMIN_PASSWORD || "";
-  return (
-    isAdminAuthConfigured() &&
-    safeEqual(username, configuredUsername()) &&
-    safeEqual(password, expectedPassword)
-  );
+export async function isAdminAuthReady() {
+  if (!isAdminAuthConfigured()) return false;
+
+  try {
+    if (!(await hasAdminUsers())) await bootstrapSuperAdmin();
+    return await hasAdminUsers();
+  } catch {
+    return false;
+  }
 }
 
-export async function createAdminSession(username: string) {
+export async function verifyAdminCredentials(username: string, password: string) {
+  if (!isAdminAuthConfigured()) return null;
+  if (!(await hasAdminUsers())) await bootstrapSuperAdmin();
+  return authenticateAdmin(username, password);
+}
+
+export async function createAdminSession(admin: AdminUser) {
   const expiresAt = Math.floor(Date.now() / 1000) + SESSION_DURATION_SECONDS;
-  const payload = Buffer.from(JSON.stringify({ username, expiresAt })).toString("base64url");
+  const payload = Buffer.from(JSON.stringify({
+    adminUserId: admin.id,
+    sessionVersion: admin.sessionVersion,
+    expiresAt,
+  })).toString("base64url");
   const token = `${payload}.${sign(payload)}`;
   const cookieStore = await cookies();
   cookieStore.set(ADMIN_COOKIE, token, {
@@ -81,17 +91,21 @@ export async function getAdminSession() {
 
   try {
     const session = JSON.parse(Buffer.from(payload, "base64url").toString("utf8")) as {
-      username?: string;
+      adminUserId?: number;
+      sessionVersion?: number;
       expiresAt?: number;
     };
     if (
-      session.username !== configuredUsername() ||
+      !session.adminUserId ||
+      !session.sessionVersion ||
       !session.expiresAt ||
       session.expiresAt <= Math.floor(Date.now() / 1000)
     ) {
       return null;
     }
-    return { username: session.username, expiresAt: session.expiresAt };
+    const admin = await getActiveAdminUserById(session.adminUserId);
+    if (!admin || admin.sessionVersion !== session.sessionVersion) return null;
+    return { ...admin, expiresAt: session.expiresAt };
   } catch {
     return null;
   }
@@ -100,5 +114,11 @@ export async function getAdminSession() {
 export async function requireAdmin() {
   const session = await getAdminSession();
   if (!session) redirect("/admin/login");
+  return session;
+}
+
+export async function requireSuperAdmin() {
+  const session = await requireAdmin();
+  if (session.role !== "super_admin") redirect("/admin?error=forbidden");
   return session;
 }

@@ -3911,6 +3911,70 @@ img {
   max-width: 520px;
 }
 
+.admin-account-meta {
+  background: #f4f6f4;
+  border: 1px solid var(--admin-line);
+  color: var(--admin-muted);
+  display: flex;
+  flex-wrap: wrap;
+  font-size: 10px;
+  gap: 12px 28px;
+  padding: 12px 14px;
+}
+
+.admin-account-meta strong {
+  color: var(--admin-ink);
+}
+
+.admin-account-password {
+  max-width: 680px;
+}
+
+.admin-account-password .admin-button {
+  justify-self: start;
+}
+
+.admin-audit-panel {
+  margin-top: 28px;
+}
+
+.admin-audit-list {
+  display: grid;
+}
+
+.admin-audit-entry {
+  align-items: center;
+  border-bottom: 1px solid var(--admin-line);
+  display: grid;
+  gap: 12px;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  padding: 13px 2px;
+}
+
+.admin-audit-entry:last-child {
+  border-bottom: 0;
+}
+
+.admin-audit-entry > svg {
+  color: var(--admin-green);
+}
+
+.admin-audit-entry strong,
+.admin-audit-entry small {
+  display: block;
+}
+
+.admin-audit-entry strong {
+  font-size: 11px;
+}
+
+.admin-audit-entry small,
+.admin-audit-entry time {
+  color: var(--admin-muted);
+  font-size: 9px;
+  margin-top: 3px;
+}
+
 @media (max-width: 1120px) {
   .admin-metrics {
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -4219,6 +4283,26 @@ img {
   .admin-delete-form .admin-button,
   .admin-editor-actions .admin-button {
     width: 100%;
+  }
+
+  .admin-account-meta {
+    display: grid;
+    gap: 7px;
+  }
+
+  .admin-account-password .admin-button {
+    justify-self: stretch;
+    width: 100%;
+  }
+
+  .admin-audit-entry {
+    align-items: start;
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .admin-audit-entry time {
+    grid-column: 2;
+    margin-top: 0;
   }
 }
 

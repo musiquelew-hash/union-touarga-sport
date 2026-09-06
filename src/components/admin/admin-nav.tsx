@@ -9,6 +9,8 @@ import {
   LogOut,
   Menu,
   Newspaper,
+  ShieldCheck,
+  UserCog,
   UserRoundCog,
   Users,
   X,
@@ -28,12 +30,17 @@ const items = [
   { href: "/admin/gestion/media", label: "Médias", icon: Images },
 ];
 
-export function AdminNav({ onNavigate }: { onNavigate?: () => void }) {
+export function AdminNav({ isSuperAdmin = false, onNavigate }: { isSuperAdmin?: boolean; onNavigate?: () => void }) {
   const pathname = usePathname();
+  const visibleItems = [
+    ...items,
+    ...(isSuperAdmin ? [{ href: "/admin/administrateurs", label: "Administrateurs", icon: ShieldCheck }] : []),
+    { href: "/admin/compte", label: "Mon compte", icon: UserCog },
+  ];
 
   return (
     <nav className="admin-nav" aria-label="Navigation de l’administration">
-      {items.map((item) => {
+      {visibleItems.map((item) => {
         const Icon = item.icon;
         const active = pathname === item.href;
         return (
@@ -47,7 +54,15 @@ export function AdminNav({ onNavigate }: { onNavigate?: () => void }) {
   );
 }
 
-export function AdminMobileHeader({ databaseReady, username }: { databaseReady: boolean; username: string }) {
+export function AdminMobileHeader({
+  databaseReady,
+  isSuperAdmin,
+  username,
+}: {
+  databaseReady: boolean;
+  isSuperAdmin: boolean;
+  username: string;
+}) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -85,7 +100,7 @@ export function AdminMobileHeader({ databaseReady, username }: { databaseReady: 
                 <X aria-hidden="true" size={21} />
               </button>
             </div>
-            <AdminNav onNavigate={() => setOpen(false)} />
+            <AdminNav isSuperAdmin={isSuperAdmin} onNavigate={() => setOpen(false)} />
             <div className="admin-sidebar__footer admin-mobile-drawer__footer">
               <div className={`admin-db-state${databaseReady ? " is-online" : ""}`}>
                 <Database aria-hidden="true" size={16} />

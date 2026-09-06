@@ -2,7 +2,7 @@ import { ArrowRight, DatabaseZap, RefreshCw } from "lucide-react";
 import Link from "next/link";
 import { syncAllCollectionsAction } from "@/app/admin/actions";
 import { AdminNotice } from "@/components/admin/admin-notice";
-import { getCmsCountsSafe, isCmsDatabaseConfigured } from "@/lib/cms-db";
+import { getCmsCountsSafe, isCmsDatabaseConfigured } from "@/lib/relational-cms-db";
 
 const modules = [
   { kind: "player", label: "Joueurs", href: "/admin/gestion/player", description: "Effectif et statistiques" },

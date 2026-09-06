@@ -1,6 +1,6 @@
 import { decode } from "html-entities";
 import { load } from "cheerio";
-import { getCmsCategorySafe } from "@/lib/cms-db";
+import { getCmsCategorySafe } from "@/lib/relational-cms-db";
 
 const SOFASCORE_API = "https://www.sofascore.com/api/v1";
 const UTS_OFFICIAL_API = "https://touargaclub.ma/wp-json/wp/v2";

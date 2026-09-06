@@ -10,8 +10,9 @@ Site moderne et responsive consacré à l'Union Touarga Sport. Les matchs et le 
 - Actualités et galerie de photos officielles
 - Histoire et identité du club
 - Dashboard administrateur pour gérer les textes, joueurs, staff, actualités et médias
+- Super-administrateur MySQL pour créer, suspendre, promouvoir et supprimer les autres comptes
 - Publication, masquage, ordre d'affichage et import ponctuel de l'ancien site officiel
-- Stockage éditorial MySQL; aucun fallback public pour les contenus administrables
+- Tables MySQL relationnelles dédiées; aucun fallback public pour les contenus administrables
 - Interface responsive aux couleurs de l'UTS
 - Revalidation automatique des données toutes les cinq minutes
 
@@ -21,7 +22,7 @@ Prérequis : Node.js 20 ou version ultérieure.
 
 ```bash
 npm install
-npm run db:seed
+npm run db:prepare
 npm run dev
 ```
 
@@ -34,12 +35,29 @@ Copier `.env.example` vers `.env.local`, puis renseigner :
 - `MYSQL_URL` : URL de connexion MySQL. `DATABASE_URL` est également acceptée.
 - `PORT` : port HTTP du service, `8080` par défaut.
 - `ADMIN_USERNAME` : identifiant de connexion, `admin` par défaut.
-- `ADMIN_PASSWORD` : mot de passe administrateur unique d'au moins 12 caractères.
+- `ADMIN_DISPLAY_NAME` : nom affiché du premier super-administrateur.
+- `ADMIN_PASSWORD` : mot de passe initial d'au moins 12 caractères.
 - `ADMIN_SESSION_SECRET` : secret aléatoire d'au moins 32 caractères, distinct du mot de passe.
 
-Le dashboard est accessible sur [http://localhost:8080/admin](http://localhost:8080/admin). Le schéma est créé automatiquement lors de la première connexion à MySQL; une copie déclarative est disponible dans `db/schema.sql`.
+Le dashboard est accessible sur [http://localhost:8080/admin](http://localhost:8080/admin). Le schéma est créé automatiquement; sa définition complète est disponible dans `db/schema.sql`.
 
-`npm run db:seed` récupère une fois les joueurs, le staff, les actualités et les médias de l'ancien site officiel, puis les enregistre dans MySQL. La commande remplace ces quatre collections. Elle initialise les textes du site seulement s'ils n'existent pas encore, afin de ne jamais écraser les modifications éditoriales.
+`npm run db:prepare` applique les migrations, crée le premier super-administrateur si `admin_users` est vide, initialise les textes et synchronise l'ancien site officiel. Une ligne modifiée depuis le dashboard passe sous contrôle manuel et n'est plus écrasée par les synchronisations de déploiement. Le bouton **Importer l’ancien site** reste une réinitialisation explicite de la rubrique.
+
+Le premier compte est créé avec `ADMIN_USERNAME`, `ADMIN_DISPLAY_NAME` et `ADMIN_PASSWORD`. Ces variables ne réinitialisent jamais un compte existant. Le super-administrateur peut ensuite gérer les autres accès dans `/admin/administrateurs`; les mots de passe sont hachés avec bcrypt et les opérations sensibles sont consignées dans `admin_audit_log`.
+
+### Structure MySQL
+
+- `players` : identité, poste, statistiques, publication et provenance des joueurs
+- `staff_members` : staff technique, médical, direction et autres membres
+- `news_articles` : actualités et visuels
+- `media_items` : médias et miniatures
+- `site_content` : textes et liens globaux du site
+- `club_milestones` : jalons historiques ordonnés
+- `admin_users` : comptes, rôles, état et version de session
+- `admin_audit_log` : journal des opérations de sécurité
+- `schema_migrations` : migrations déjà appliquées
+
+Il n'existe volontairement aucune table de matchs ou de classement : ces deux rubriques restent alimentées par les APIs sportives publiques.
 
 Sans MySQL, les matchs et le classement restent disponibles via les APIs publiques, mais les rubriques éditoriales affichent un état vide. L'administration signale la base hors ligne et refuse proprement les écritures.
 
@@ -77,6 +95,7 @@ Le fichier `railway.json` configure explicitement Railpack, la commande de build
 Les commandes déjà définies dans `package.json` sont :
 
 - Build : `npm run build`
+- Pré-déploiement : `npm run db:prepare`
 - Démarrage : `npm run start`
 
 ### Ajouter MySQL et activer le dashboard
@@ -85,10 +104,10 @@ Les commandes déjà définies dans `package.json` sont :
 2. Ouvrir le service Next.js puis **Variables**.
 3. Ajouter une référence vers l'URL MySQL sous le nom `MYSQL_URL`. Railway expose généralement `${{MySQL.MYSQL_URL}}` lorsque le service s'appelle `MySQL`.
 4. Ajouter `PORT=8080`.
-5. Ajouter `ADMIN_USERNAME`, `ADMIN_PASSWORD` et `ADMIN_SESSION_SECRET` comme variables privées.
+5. Ajouter `ADMIN_USERNAME`, `ADMIN_DISPLAY_NAME`, `ADMIN_PASSWORD` et `ADMIN_SESSION_SECRET` comme variables privées.
 6. Redéployer le service puis ouvrir `/admin`.
 
-Après le premier déploiement, exécuter `npm run db:seed` avec `MYSQL_URL` configurée, ou utiliser **Importer l’ancien site** dans le dashboard. Les contenus éditoriaux restent ensuite modifiables exclusivement dans l'administration.
+Railway exécute automatiquement `npm run db:prepare` avant chaque démarrage grâce à `railway.json`. Le déploiement applique donc le schéma, garantit le premier super-admin et met à jour les lignes encore liées à la source officielle. Aucun seed manuel n'est nécessaire.
 
 ## Sources
 
@@ -96,6 +115,6 @@ Après le premier déploiement, exécuter `npm run db:seed` avec `MYSQL_URL` con
 - Classement : Sofascore, avec le tableau public du site officiel comme seconde source sportive
 - Données sportives complémentaires : Sofascore lorsqu'il est disponible
 - Joueurs, staff, actualités, médias et textes : MySQL
-- Import initial éditorial : ancien site WordPress officiel de l'Union Touarga Sport, uniquement sur action explicite
+- Synchronisation éditoriale initiale et de déploiement : ancien site WordPress officiel de l'Union Touarga Sport
 
-Seules les données sportives sont remises à jour automatiquement par Next.js. Les contenus éditoriaux changent uniquement après une action dans le dashboard ou un nouveau seed explicite.
+Les données sportives sont remises à jour automatiquement par Next.js. Les contenus éditoriaux officiels sont réconciliés à chaque déploiement; toute ligne modifiée dans le dashboard reste ensuite protégée des mises à jour automatiques.

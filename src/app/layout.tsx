@@ -4,6 +4,8 @@ import { SiteShell } from "@/components/site-shell";
 import { getSiteContent } from "@/lib/site-content";
 import "./globals.css";
 
+export const dynamic = "force-dynamic";
+
 const manrope = Manrope({
   variable: "--font-body",
   subsets: ["latin"],

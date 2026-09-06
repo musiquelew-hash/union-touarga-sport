@@ -4,14 +4,14 @@ import Link from "next/link";
 import { logoutAction } from "@/app/admin/actions";
 import { AdminMobileHeader, AdminNav } from "@/components/admin/admin-nav";
 import { requireAdmin } from "@/lib/admin-auth";
-import { checkCmsConnection } from "@/lib/cms-db";
+import { checkCmsConnection } from "@/lib/relational-cms-db";
 
 export default async function AdminDashboardLayout({ children }: { children: React.ReactNode }) {
   const [session, databaseReady] = await Promise.all([requireAdmin(), checkCmsConnection()]);
 
   return (
     <div className="admin-layout">
-      <AdminMobileHeader databaseReady={databaseReady} username={session.username} />
+      <AdminMobileHeader databaseReady={databaseReady} isSuperAdmin={session.role === "super_admin"} username={session.username} />
       <aside className="admin-sidebar">
         <div className="admin-sidebar__brand">
           <Image src="/uts/crest-white.png" alt="" width={44} height={52} />
@@ -20,7 +20,7 @@ export default async function AdminDashboardLayout({ children }: { children: Rea
             <span>Centre de gestion</span>
           </div>
         </div>
-        <AdminNav />
+        <AdminNav isSuperAdmin={session.role === "super_admin"} />
         <div className="admin-sidebar__footer">
           <div className={`admin-db-state${databaseReady ? " is-online" : ""}`}>
             <Database aria-hidden="true" size={16} />
