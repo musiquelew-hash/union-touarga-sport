@@ -114,7 +114,7 @@ function PlayerFields({ data }: { data?: PlayerSummary }) {
       </SelectField>
       <InputField label="Nationalité" name="nationality" value={data?.nationality || "Maroc"} required />
       <InputField label="Code pays" name="countryCode" value={data?.countryCode} placeholder="MA" />
-      <AdminImageField label="Photo du joueur" name="imageUrl" value={data?.imageUrl} />
+      <AdminImageField label="Photo du joueur" name="imageUrl" value={data?.imageUrl} variant="portrait" />
       <InputField label="Apparitions" name="appearances" value={data?.appearances} type="number" />
       <InputField label="Buts" name="goals" value={data?.goals} type="number" />
       <InputField label="Passes décisives" name="assists" value={data?.assists} type="number" />

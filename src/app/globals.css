@@ -3727,6 +3727,10 @@ img {
   overflow: hidden;
 }
 
+.admin-image-field--portrait .admin-image-field__preview {
+  aspect-ratio: 4 / 5;
+}
+
 .admin-image-field__controls {
   display: grid;
   gap: 10px;
@@ -4304,6 +4308,12 @@ img {
 
   .admin-image-field__preview {
     max-height: 230px;
+  }
+
+  .admin-image-field--portrait .admin-image-field__preview {
+    justify-self: start;
+    max-height: none;
+    width: min(180px, 100%);
   }
 
   .admin-metric {

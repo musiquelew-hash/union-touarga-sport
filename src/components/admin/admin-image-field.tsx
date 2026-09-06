@@ -9,11 +9,13 @@ export function AdminImageField({
   name,
   value,
   required = false,
+  variant = "landscape",
 }: {
   label: string;
   name: string;
   value?: string | null;
   required?: boolean;
+  variant?: "landscape" | "portrait";
 }) {
   const [preview, setPreview] = useState(value || "");
   const [objectUrl, setObjectUrl] = useState<string | null>(null);
@@ -40,7 +42,7 @@ export function AdminImageField({
   }
 
   return (
-    <div className="admin-image-field admin-field--wide">
+    <div className={`admin-image-field admin-image-field--${variant} admin-field--wide`}>
       <span className="admin-image-field__label">{label}</span>
       <div className="admin-image-field__layout">
         <div
