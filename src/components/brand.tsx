@@ -3,11 +3,19 @@ import Link from "next/link";
 
 export const UTS_CREST_URL = "/uts/crest-white.png";
 
-export function Brand({ compact = false, crestOnly = false }: { compact?: boolean; crestOnly?: boolean }) {
+export function Brand({
+  compact = false,
+  crestOnly = false,
+  crestUrl = UTS_CREST_URL,
+}: {
+  compact?: boolean;
+  crestOnly?: boolean;
+  crestUrl?: string;
+}) {
   return (
     <Link className={`brand${compact ? " brand--compact" : ""}`} href="/" aria-label="Accueil UTS">
       <span className="brand__crest">
-        <Image src={UTS_CREST_URL} alt="Écusson de l'Union Touarga Sport" width={56} height={56} priority />
+        <Image src={crestUrl} alt="Écusson de l'Union Touarga Sport" width={56} height={56} priority />
       </span>
       <span className="brand__wordmark">
         {!crestOnly && <strong>UTS</strong>}

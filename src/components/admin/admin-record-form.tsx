@@ -59,6 +59,15 @@ function InputField({
   );
 }
 
+function TextAreaField({ label, name, value }: { label: string; name: string; value?: string | null }) {
+  return (
+    <label className="admin-field--wide">
+      <span>{label}</span>
+      <textarea name={name} defaultValue={value ?? ""} rows={3} />
+    </label>
+  );
+}
+
 function SelectField({
   label,
   name,
@@ -135,6 +144,7 @@ function NewsFields({ data }: { data?: NewsSummary }) {
     <>
       {data && <input type="hidden" name="id" value={data.id} />}
       <InputField label="Titre" name="title" value={data?.title} required wide />
+      <TextAreaField label="Résumé" name="summary" value={data?.summary} />
       <InputField label="Lien de l’article" name="url" value={data?.url} type="url" required wide />
       <InputField label="URL de l’image" name="imageUrl" value={data?.imageUrl} wide />
       <InputField label="Texte alternatif" name="imageAlt" value={data?.imageAlt} wide />
@@ -226,7 +236,7 @@ export function AdminRecordEditor({ kind, record }: { kind: CmsKind; record: Cms
         <span className={`admin-publish-dot${record.published ? " is-published" : ""}`} aria-hidden="true" />
         <span>
           <strong>{item.title}</strong>
-          <small>{item.meta} · {record.syncWithSource ? "Mise à jour auto" : "Piloté par dashboard"}</small>
+          <small>{item.meta} · {record.syncWithSource ? "Import initial" : "Piloté par dashboard"}</small>
         </span>
         <span className="admin-record__status">{record.published ? "Publié" : "Masqué"}</span>
       </summary>

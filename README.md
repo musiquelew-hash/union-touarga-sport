@@ -7,11 +7,13 @@ Site moderne et responsive consacré à l'Union Touarga Sport. Les matchs et le 
 - Calendrier et résultats de l'équipe première
 - Classement de la Botola Pro
 - Effectif classé par poste et staff par département
-- Actualités et galerie de photos officielles
+- Actualités et galerie de photos officielles, avec textes, résumés et images modifiables
 - Histoire et identité du club
-- Dashboard administrateur pour gérer les textes, joueurs, staff, actualités et médias
+- Dashboard administrateur pour gérer les textes, joueurs, staff, actualités, médias et tous les visuels globaux
 - Super-administrateur MySQL pour créer, suspendre, promouvoir et supprimer les autres comptes
-- Publication, masquage, ordre d'affichage et import ponctuel de l'ancien site officiel
+- Remplissage initial unique depuis l'ancien site officiel, déclenché par le super-administrateur
+- Publication, masquage et ordre d'affichage des contenus importés ou créés dans le dashboard
+- Photos officielles initiales conservées localement dans `public/content-images`
 - Tables MySQL relationnelles dédiées; aucun fallback public pour les contenus administrables
 - Interface responsive aux couleurs de l'UTS
 - Revalidation automatique des données toutes les cinq minutes
@@ -41,7 +43,11 @@ Copier `.env.example` vers `.env.local`, puis renseigner :
 
 Le dashboard est accessible sur [http://localhost:8080/admin](http://localhost:8080/admin). Le schéma est créé automatiquement; sa définition complète est disponible dans `db/schema.sql`.
 
-`npm run db:prepare` applique les migrations, crée le premier super-administrateur si `admin_users` est vide, initialise les textes et synchronise l'ancien site officiel. Une ligne modifiée depuis le dashboard passe sous contrôle manuel et n'est plus écrasée par les synchronisations de déploiement. Le bouton **Importer l’ancien site** reste une réinitialisation explicite de la rubrique.
+`npm run db:prepare` applique uniquement le schéma et les migrations, puis crée le premier super-administrateur si `admin_users` est vide. Cette commande ne remplit et ne synchronise aucun contenu éditorial.
+
+Après la première connexion, le super-administrateur utilise **Remplir le site une première fois** sur la vue d'ensemble. Cette action importe en une seule opération les joueurs, le staff, les actualités et les médias. Son état est enregistré dans `content_imports`; après réussite, le bouton disparaît et l'import ne peut plus être relancé. Les déploiements suivants ne modifient jamais ces contenus.
+
+Les photos présentes au moment de l'import sont déjà copiées dans `public/content-images` et associées aux contenus par `src/data/initial-image-manifest.json`. Toutes les URL d'image et leurs textes alternatifs restent modifiables dans le dashboard, y compris les écussons, les bannières, les visuels de l'accueil et l'image de connexion. `npm run assets:download` sert uniquement à renouveler ces fichiers sources avant un commit; cette commande ne fait pas partie du déploiement.
 
 Le premier compte est créé avec `ADMIN_USERNAME`, `ADMIN_DISPLAY_NAME` et `ADMIN_PASSWORD`. Ces variables ne réinitialisent jamais un compte existant. Le super-administrateur peut ensuite gérer les autres accès dans `/admin/administrateurs`; les mots de passe sont hachés avec bcrypt et les opérations sensibles sont consignées dans `admin_audit_log`.
 
@@ -49,11 +55,12 @@ Le premier compte est créé avec `ADMIN_USERNAME`, `ADMIN_DISPLAY_NAME` et `ADM
 
 - `players` : identité, poste, statistiques, publication et provenance des joueurs
 - `staff_members` : staff technique, médical, direction et autres membres
-- `news_articles` : actualités et visuels
+- `news_articles` : titres, résumés, liens, dates et visuels des actualités
 - `media_items` : médias et miniatures
-- `site_content` : textes et liens globaux du site
+- `site_content` : textes, liens et visuels globaux du site
 - `club_milestones` : jalons historiques ordonnés
 - `admin_users` : comptes, rôles, état et version de session
+- `content_imports` : verrou et résultat du remplissage initial unique
 - `admin_audit_log` : journal des opérations de sécurité
 - `schema_migrations` : migrations déjà appliquées
 
@@ -107,14 +114,15 @@ Les commandes déjà définies dans `package.json` sont :
 5. Ajouter `ADMIN_USERNAME`, `ADMIN_DISPLAY_NAME`, `ADMIN_PASSWORD` et `ADMIN_SESSION_SECRET` comme variables privées.
 6. Redéployer le service puis ouvrir `/admin`.
 
-Railway exécute automatiquement `npm run db:prepare` avant chaque démarrage grâce à `railway.json`. Le déploiement applique donc le schéma, garantit le premier super-admin et met à jour les lignes encore liées à la source officielle. Aucun seed manuel n'est nécessaire.
+Railway exécute automatiquement `npm run db:prepare` avant chaque démarrage grâce à `railway.json`. Le déploiement applique donc le schéma et garantit le premier super-administrateur, sans importer ni modifier les contenus éditoriaux. Après le tout premier déploiement, ouvrez `/admin` avec ce compte et cliquez une seule fois sur **Remplir le site une première fois**.
 
 ## Sources
 
 - Calendrier et résultats : APIs publiques TheSportsDB et Sofascore
 - Classement : Sofascore, avec le tableau public du site officiel comme seconde source sportive
 - Données sportives complémentaires : Sofascore lorsqu'il est disponible
-- Joueurs, staff, actualités, médias et textes : MySQL
-- Synchronisation éditoriale initiale et de déploiement : ancien site WordPress officiel de l'Union Touarga Sport
+- Joueurs, staff, actualités, médias, textes et références d'images : MySQL
+- Remplissage éditorial initial unique : ancien site WordPress officiel de l'Union Touarga Sport
+- Images du remplissage initial : fichiers locaux versionnés dans `public/content-images`
 
-Les données sportives sont remises à jour automatiquement par Next.js. Les contenus éditoriaux officiels sont réconciliés à chaque déploiement; toute ligne modifiée dans le dashboard reste ensuite protégée des mises à jour automatiques.
+Les données sportives sont remises à jour automatiquement par Next.js. Après le remplissage initial, les contenus éditoriaux et leurs images sont administrés exclusivement dans le dashboard et ne sont jamais réimportés au déploiement.

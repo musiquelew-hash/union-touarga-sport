@@ -14,6 +14,7 @@ type OfficialPost = {
   date?: string;
   link?: string;
   title?: { rendered?: string };
+  excerpt?: { rendered?: string };
   jetpack_featured_media_url?: string;
   _embedded?: {
     "wp:featuredmedia"?: { source_url?: string; alt_text?: string }[];
@@ -67,6 +68,10 @@ function cleanOfficialName(value: string) {
     .split(" ")
     .map((part) => part.charAt(0).toLocaleUpperCase("fr") + part.slice(1))
     .join(" ");
+}
+
+function plainText(value: string) {
+  return load(value).text().replace(/\s+/g, " ").trim();
 }
 
 function stableNumericId(value: string) {
@@ -172,6 +177,7 @@ function normalizeNews(posts: OfficialPost[]) {
       return {
         id: post.id,
         title: decode(post.title?.rendered || "Actualité UTS"),
+        summary: decode(plainText(post.excerpt?.rendered || "")),
         url: post.link || "https://touargaclub.ma/nos-news/",
         imageUrl: featuredMedia?.source_url || post.jetpack_featured_media_url || null,
         imageAlt: featuredMedia?.alt_text || "",

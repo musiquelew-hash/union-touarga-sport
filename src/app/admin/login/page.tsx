@@ -1,8 +1,10 @@
 import { ArrowRight, LockKeyhole, ShieldAlert } from "lucide-react";
 import Image from "next/image";
 import { redirect } from "next/navigation";
+import type { CSSProperties } from "react";
 import { loginAction } from "@/app/admin/actions";
 import { getAdminSession, isAdminAuthReady } from "@/lib/admin-auth";
+import { getSiteContent } from "@/lib/site-content";
 
 export default async function AdminLoginPage({
   searchParams,
@@ -10,13 +12,15 @@ export default async function AdminLoginPage({
   searchParams: Promise<{ error?: string; passwordChanged?: string }>;
 }) {
   if (await getAdminSession()) redirect("/admin");
-  const params = await searchParams;
-  const configured = await isAdminAuthReady();
+  const [params, configured, content] = await Promise.all([searchParams, isAdminAuthReady(), getSiteContent()]);
 
   return (
     <div className="admin-login">
-      <section className="admin-login__identity">
-        <Image src="/uts/crest-color.png" alt="Union Touarga Sport" width={96} height={112} priority />
+      <section
+        className="admin-login__identity"
+        style={{ "--admin-login-image": `url("${content.adminLoginImageUrl}")` } as CSSProperties}
+      >
+        <Image src={content.crestColorUrl} alt="Union Touarga Sport" width={96} height={112} priority />
         <span>Union Touarga Sport</span>
         <h1>Centre de gestion du club</h1>
         <p>Contenu éditorial, effectif, staff, comptes administrateurs et publications réunis au même endroit.</p>

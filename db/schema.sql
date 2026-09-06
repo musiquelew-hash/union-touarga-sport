@@ -23,6 +23,21 @@ CREATE TABLE IF NOT EXISTS admin_users (
     FOREIGN KEY (created_by_admin_id) REFERENCES admin_users (id) ON DELETE SET NULL
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS content_imports (
+  import_key VARCHAR(100) NOT NULL,
+  status ENUM('running', 'completed', 'failed') NOT NULL,
+  attempt_count INT UNSIGNED NOT NULL DEFAULT 1,
+  triggered_by_admin_id BIGINT UNSIGNED NULL,
+  imported_counts JSON NULL,
+  last_error VARCHAR(1000) NULL,
+  started_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  completed_at DATETIME NULL,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (import_key),
+  CONSTRAINT content_imports_admin_fk
+    FOREIGN KEY (triggered_by_admin_id) REFERENCES admin_users (id) ON DELETE SET NULL
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
 CREATE TABLE IF NOT EXISTS players (
   cms_id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   record_key VARCHAR(128) NOT NULL,
@@ -85,6 +100,7 @@ CREATE TABLE IF NOT EXISTS news_articles (
   record_key VARCHAR(128) NOT NULL,
   article_id BIGINT UNSIGNED NOT NULL,
   title VARCHAR(500) NOT NULL,
+  summary_text TEXT NOT NULL,
   article_url TEXT NOT NULL,
   image_url TEXT NULL,
   image_alt VARCHAR(500) NOT NULL DEFAULT '',
@@ -148,6 +164,26 @@ CREATE TABLE IF NOT EXISTS site_content (
   footer_statement VARCHAR(500) NOT NULL,
   instagram_url TEXT NOT NULL,
   youtube_url TEXT NOT NULL,
+  crest_color_url TEXT NOT NULL,
+  crest_white_url TEXT NOT NULL,
+  admin_login_image_url TEXT NOT NULL,
+  home_hero_image_url TEXT NOT NULL,
+  home_hero_image_alt VARCHAR(500) NOT NULL DEFAULT '',
+  home_manifesto_image_url TEXT NOT NULL,
+  home_manifesto_image_alt VARCHAR(500) NOT NULL DEFAULT '',
+  team_header_image_url TEXT NOT NULL,
+  team_header_image_alt VARCHAR(500) NOT NULL DEFAULT '',
+  matches_header_image_url TEXT NOT NULL,
+  matches_header_image_alt VARCHAR(500) NOT NULL DEFAULT '',
+  standings_header_image_url TEXT NOT NULL,
+  standings_header_image_alt VARCHAR(500) NOT NULL DEFAULT '',
+  club_header_image_url TEXT NOT NULL,
+  club_header_image_alt VARCHAR(500) NOT NULL DEFAULT '',
+  media_header_image_url TEXT NOT NULL,
+  media_header_image_alt VARCHAR(500) NOT NULL DEFAULT '',
+  media_social_image_url TEXT NOT NULL,
+  media_social_image_alt VARCHAR(500) NOT NULL DEFAULT '',
+  media_fallback_image_url TEXT NOT NULL,
   updated_by_admin_id BIGINT UNSIGNED NULL,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,

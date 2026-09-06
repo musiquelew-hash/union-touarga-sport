@@ -28,7 +28,7 @@ import {
   deleteAdminUser,
   updateAdminUser,
 } from "@/lib/admin-users";
-import { replaceAllOfficialCmsData, replaceOfficialCmsCategory } from "@/lib/official-cms-sync";
+import { runInitialContentImport } from "@/lib/initial-content-import";
 import { defaultSiteContent, type SiteContent } from "@/lib/site-content";
 import {
   type MediaSummary,
@@ -46,6 +46,9 @@ const collectionRoutes: Record<CmsKind, string> = {
 
 const requiredText = z.string().trim().min(1).max(500);
 const optionalText = z.string().trim().max(1000);
+const optionalLongText = z.string().trim().max(3000);
+const imagePath = z.string().trim().min(1).max(1000).refine((value) => value.startsWith("/") || URL.canParse(value));
+const optionalImagePath = optionalText.refine((value) => !value || value.startsWith("/") || URL.canParse(value));
 const nullableNumber = z.number().finite().nullable();
 const nullableInteger = z.number().int().nullable();
 
@@ -138,6 +141,26 @@ const siteContentSchema = z.object({
   footerStatement: requiredText,
   instagramUrl: z.string().url(),
   youtubeUrl: z.string().url(),
+  crestColorUrl: imagePath,
+  crestWhiteUrl: imagePath,
+  adminLoginImageUrl: imagePath,
+  homeHeroImageUrl: imagePath,
+  homeHeroImageAlt: requiredText,
+  homeManifestoImageUrl: imagePath,
+  homeManifestoImageAlt: requiredText,
+  teamHeaderImageUrl: imagePath,
+  teamHeaderImageAlt: requiredText,
+  matchesHeaderImageUrl: imagePath,
+  matchesHeaderImageAlt: requiredText,
+  standingsHeaderImageUrl: imagePath,
+  standingsHeaderImageAlt: requiredText,
+  clubHeaderImageUrl: imagePath,
+  clubHeaderImageAlt: requiredText,
+  mediaHeaderImageUrl: imagePath,
+  mediaHeaderImageAlt: requiredText,
+  mediaSocialImageUrl: imagePath,
+  mediaSocialImageAlt: requiredText,
+  mediaFallbackImageUrl: imagePath,
 });
 
 export async function saveSiteContentAction(formData: FormData) {
@@ -165,6 +188,26 @@ export async function saveSiteContentAction(formData: FormData) {
     footerStatement: text(formData, "footerStatement"),
     instagramUrl: text(formData, "instagramUrl"),
     youtubeUrl: text(formData, "youtubeUrl"),
+    crestColorUrl: text(formData, "crestColorUrl"),
+    crestWhiteUrl: text(formData, "crestWhiteUrl"),
+    adminLoginImageUrl: text(formData, "adminLoginImageUrl"),
+    homeHeroImageUrl: text(formData, "homeHeroImageUrl"),
+    homeHeroImageAlt: text(formData, "homeHeroImageAlt"),
+    homeManifestoImageUrl: text(formData, "homeManifestoImageUrl"),
+    homeManifestoImageAlt: text(formData, "homeManifestoImageAlt"),
+    teamHeaderImageUrl: text(formData, "teamHeaderImageUrl"),
+    teamHeaderImageAlt: text(formData, "teamHeaderImageAlt"),
+    matchesHeaderImageUrl: text(formData, "matchesHeaderImageUrl"),
+    matchesHeaderImageAlt: text(formData, "matchesHeaderImageAlt"),
+    standingsHeaderImageUrl: text(formData, "standingsHeaderImageUrl"),
+    standingsHeaderImageAlt: text(formData, "standingsHeaderImageAlt"),
+    clubHeaderImageUrl: text(formData, "clubHeaderImageUrl"),
+    clubHeaderImageAlt: text(formData, "clubHeaderImageAlt"),
+    mediaHeaderImageUrl: text(formData, "mediaHeaderImageUrl"),
+    mediaHeaderImageAlt: text(formData, "mediaHeaderImageAlt"),
+    mediaSocialImageUrl: text(formData, "mediaSocialImageUrl"),
+    mediaSocialImageAlt: text(formData, "mediaSocialImageAlt"),
+    mediaFallbackImageUrl: text(formData, "mediaFallbackImageUrl"),
   };
   const parsed = siteContentSchema.safeParse(raw);
   if (!parsed.success) redirect("/admin/contenu?error=validation");
@@ -183,7 +226,7 @@ const playerSchema = z.object({
   foot: optionalText.transform((value) => value || null),
   nationality: requiredText,
   countryCode: optionalText.transform((value) => value || null),
-  imageUrl: optionalText,
+  imageUrl: optionalImagePath,
   appearances: nullableInteger,
   goals: nullableInteger,
   assists: nullableInteger,
@@ -230,7 +273,7 @@ const staffSchema = z.object({
   name: requiredText,
   role: requiredText,
   department: z.enum(["Technique", "Médical", "Direction", "Autre"]),
-  imageUrl: optionalText,
+  imageUrl: optionalImagePath,
 });
 
 export async function saveStaffAction(formData: FormData) {
@@ -261,8 +304,9 @@ export async function saveStaffAction(formData: FormData) {
 const newsSchema = z.object({
   id: z.number().int().positive(),
   title: requiredText,
+  summary: optionalLongText,
   url: z.string().url(),
-  imageUrl: optionalText.transform((value) => value || null),
+  imageUrl: optionalImagePath.transform((value) => value || null),
   imageAlt: optionalText,
   timestamp: nullableInteger,
 });
@@ -273,6 +317,7 @@ export async function saveNewsAction(formData: FormData) {
   const parsed = newsSchema.safeParse({
     id: numberOr(formData, "id", generatedNumericId()),
     title: text(formData, "title"),
+    summary: text(formData, "summary"),
     url: text(formData, "url"),
     imageUrl: text(formData, "imageUrl"),
     imageAlt: text(formData, "imageAlt"),
@@ -298,7 +343,7 @@ const mediaSchema = z.object({
   id: requiredText,
   title: requiredText,
   url: z.string().url(),
-  thumbnailUrl: optionalText.transform((value) => value || null),
+  thumbnailUrl: optionalImagePath.transform((value) => value || null),
   timestamp: nullableInteger,
 });
 
@@ -345,17 +390,21 @@ export async function clearCollectionAction(formData: FormData) {
   return persist(() => clearCmsCategory(kind.data), collectionRoutes[kind.data]);
 }
 
-export async function syncCollectionAction(formData: FormData) {
-  await requireAdmin();
-  const kind = z.enum(cmsKinds).safeParse(text(formData, "kind"));
-  if (!kind.success) redirect("/admin?error=validation");
+export async function runInitialContentImportAction() {
+  const admin = await requireSuperAdmin();
+  let result: Awaited<ReturnType<typeof runInitialContentImport>>;
 
-  return persist(() => replaceOfficialCmsCategory(kind.data), collectionRoutes[kind.data]);
-}
+  try {
+    result = await runInitialContentImport(admin.id);
+  } catch (error) {
+    console.error("[ADMIN] Import initial impossible", error);
+    redirect("/admin?error=initial-import");
+  }
 
-export async function syncAllCollectionsAction() {
-  await requireAdmin();
-  return persist(() => replaceAllOfficialCmsData(), "/admin");
+  if (result === "already-completed") redirect("/admin?error=import-completed");
+  if (result === "running") redirect("/admin?error=import-running");
+  publicPaths();
+  redirect("/admin?saved=imported");
 }
 
 const adminAccountSchema = z.object({

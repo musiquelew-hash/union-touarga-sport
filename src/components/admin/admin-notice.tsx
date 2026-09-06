@@ -5,7 +5,7 @@ export function AdminNotice({ saved, error }: { saved?: string; error?: string }
     return (
       <div className="admin-notice admin-notice--success" role="status">
         <CheckCircle2 aria-hidden="true" size={18} />
-        Les modifications sont publiées.
+        {saved === "imported" ? "Le remplissage initial du site est terminé." : "Les modifications sont publiées."}
       </div>
     );
   }
@@ -19,6 +19,9 @@ export function AdminNotice({ saved, error }: { saved?: string; error?: string }
       "not-found": "Ce compte administrateur n’existe plus.",
       "current-password": "Le mot de passe actuel est incorrect.",
       forbidden: "Cette section est réservée aux super-administrateurs.",
+      "import-completed": "Le remplissage initial a déjà été effectué et ne peut pas être relancé.",
+      "import-running": "Le remplissage initial est déjà en cours.",
+      "initial-import": "Le remplissage initial a échoué. Vous pouvez le relancer sans perdre les données existantes.",
       database: "La base MySQL n’est pas joignable. Vérifiez sa liaison et ses variables Railway.",
     };
     const message = messages[error] || messages.database;

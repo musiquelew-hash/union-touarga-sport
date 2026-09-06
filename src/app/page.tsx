@@ -42,8 +42,8 @@ export default async function Home() {
       <section className="home-hero">
         <Image
           className="home-hero__image"
-          src="/uts/hero-candidate.jpg"
-          alt="L’ensemble des équipes et du staff de l’Union Touarga Sport"
+          src={content.homeHeroImageUrl}
+          alt={content.homeHeroImageAlt}
           fill
           priority
           sizes="100vw"
@@ -175,7 +175,9 @@ export default async function Home() {
           </div>
           {featuredPlayers.length > 0 ? (
             <div className="players-grid">
-              {featuredPlayers.map((player) => player && <PlayerCard key={player.id} player={player} />)}
+              {featuredPlayers.map((player) => player && (
+                <PlayerCard key={player.id} player={player} fallbackImageUrl={content.crestColorUrl} />
+              ))}
             </div>
           ) : (
             <div className="empty-state">
@@ -190,8 +192,8 @@ export default async function Home() {
       <section className="home-manifesto">
         <div className="home-manifesto__visual">
           <Image
-            src="/uts/team.jpg"
-            alt="Une équipe de l’Union Touarga Sport avant une rencontre"
+            src={content.homeManifestoImageUrl}
+            alt={content.homeManifestoImageAlt}
             fill
             sizes="(max-width: 820px) 100vw, 58vw"
           />
@@ -261,7 +263,7 @@ export default async function Home() {
                   target="_blank"
                 >
                   <Image
-                    src={media.thumbnailUrl || "/uts/team.jpg"}
+                    src={media.thumbnailUrl || content.mediaFallbackImageUrl}
                     alt=""
                     fill
                     sizes={index === 0 ? "(max-width: 820px) 100vw, 58vw" : "(max-width: 820px) 100vw, 34vw"}

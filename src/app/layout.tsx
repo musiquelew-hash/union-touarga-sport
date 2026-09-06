@@ -47,6 +47,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
           stripPrimary={content.stripPrimary}
           stripSecondary={content.stripSecondary}
           footerStatement={content.footerStatement}
+          crestWhiteUrl={content.crestWhiteUrl}
         >
           {children}
         </SiteShell>

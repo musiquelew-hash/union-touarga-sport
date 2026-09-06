@@ -10,12 +10,18 @@ const footerLinks = [
   { href: "/medias", label: "Médias" },
 ];
 
-export function SiteFooter({ statement = "Un club de Rabat. Une histoire collective. Une ambition qui avance." }: { statement?: string }) {
+export function SiteFooter({
+  statement = "Un club de Rabat. Une histoire collective. Une ambition qui avance.",
+  crestUrl,
+}: {
+  statement?: string;
+  crestUrl?: string;
+}) {
   return (
     <footer className="site-footer">
       <div className="shell site-footer__top">
         <div className="site-footer__statement">
-          <Brand />
+          <Brand crestUrl={crestUrl} />
           <p>{statement}</p>
         </div>
         <nav className="site-footer__links" aria-label="Navigation de pied de page">

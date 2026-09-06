@@ -3,6 +3,7 @@ import { Users } from "lucide-react";
 import { PageHeading } from "@/components/page-heading";
 import { PlayerCard } from "@/components/player-card";
 import { StaffCard } from "@/components/staff-card";
+import { getSiteContent } from "@/lib/site-content";
 import { getUtsData, type PlayerSummary, type StaffSummary } from "@/lib/uts-data";
 
 export const metadata: Metadata = {
@@ -28,7 +29,7 @@ const departmentLabels: Record<StaffSummary["department"], string> = {
 };
 
 export default async function TeamPage() {
-  const data = await getUtsData();
+  const [data, content] = await Promise.all([getUtsData(), getSiteContent()]);
   const groups = positions
     .map((position) => ({ position, players: data.players.filter((player) => player.position === position) }))
     .filter((group) => group.players.length > 0);
@@ -42,8 +43,8 @@ export default async function TeamPage() {
         eyebrow="Équipe première"
         title="L'effectif"
         intro="Les joueurs et les membres de l’encadrement publiés par le club, regroupés par ligne et par département."
-        image="/uts/hero-candidate.jpg"
-        imageAlt="L’ensemble des équipes et du staff de l’Union Touarga Sport"
+        image={content.teamHeaderImageUrl}
+        imageAlt={content.teamHeaderImageAlt}
         imagePosition="bottom"
       />
 
@@ -74,7 +75,12 @@ export default async function TeamPage() {
                   </div>
                   <div className="players-grid">
                     {group.players.map((player) => (
-                      <PlayerCard key={player.id} player={player} detailed />
+                      <PlayerCard
+                        key={player.id}
+                        player={player}
+                        fallbackImageUrl={content.crestColorUrl}
+                        detailed
+                      />
                     ))}
                   </div>
                 </section>
@@ -98,7 +104,7 @@ export default async function TeamPage() {
                   </div>
                   <div className="staff-grid">
                     {group.members.map((member) => (
-                      <StaffCard key={member.id} member={member} />
+                      <StaffCard key={member.id} member={member} fallbackImageUrl={content.crestColorUrl} />
                     ))}
                   </div>
                 </section>

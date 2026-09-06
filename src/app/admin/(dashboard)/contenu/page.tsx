@@ -60,6 +60,35 @@ export default async function AdminContentPage({
 
         <section className="admin-panel">
           <div className="admin-panel__heading">
+            <div><span>03</span><h2>Images du site</h2></div>
+            <p>Utilisez un chemin local commençant par / ou une URL HTTPS.</p>
+          </div>
+          <div className="admin-form-grid">
+            <InputField label="Écusson couleur" name="crestColorUrl" value={content.crestColorUrl} />
+            <InputField label="Écusson blanc" name="crestWhiteUrl" value={content.crestWhiteUrl} />
+            <InputField label="Fond de connexion" name="adminLoginImageUrl" value={content.adminLoginImageUrl} />
+            <InputField label="Hero de l’accueil" name="homeHeroImageUrl" value={content.homeHeroImageUrl} />
+            <InputField label="Texte alternatif du hero" name="homeHeroImageAlt" value={content.homeHeroImageAlt} />
+            <InputField label="Image du manifeste" name="homeManifestoImageUrl" value={content.homeManifestoImageUrl} />
+            <InputField label="Texte alternatif du manifeste" name="homeManifestoImageAlt" value={content.homeManifestoImageAlt} />
+            <InputField label="Bannière Équipe" name="teamHeaderImageUrl" value={content.teamHeaderImageUrl} />
+            <InputField label="Texte alternatif Équipe" name="teamHeaderImageAlt" value={content.teamHeaderImageAlt} />
+            <InputField label="Bannière Matchs" name="matchesHeaderImageUrl" value={content.matchesHeaderImageUrl} />
+            <InputField label="Texte alternatif Matchs" name="matchesHeaderImageAlt" value={content.matchesHeaderImageAlt} />
+            <InputField label="Bannière Classement" name="standingsHeaderImageUrl" value={content.standingsHeaderImageUrl} />
+            <InputField label="Texte alternatif Classement" name="standingsHeaderImageAlt" value={content.standingsHeaderImageAlt} />
+            <InputField label="Bannière Club" name="clubHeaderImageUrl" value={content.clubHeaderImageUrl} />
+            <InputField label="Texte alternatif Club" name="clubHeaderImageAlt" value={content.clubHeaderImageAlt} />
+            <InputField label="Bannière Médias" name="mediaHeaderImageUrl" value={content.mediaHeaderImageUrl} />
+            <InputField label="Texte alternatif Médias" name="mediaHeaderImageAlt" value={content.mediaHeaderImageAlt} />
+            <InputField label="Image des réseaux sociaux" name="mediaSocialImageUrl" value={content.mediaSocialImageUrl} />
+            <InputField label="Texte alternatif réseaux sociaux" name="mediaSocialImageAlt" value={content.mediaSocialImageAlt} />
+            <InputField label="Image média de secours" name="mediaFallbackImageUrl" value={content.mediaFallbackImageUrl} />
+          </div>
+        </section>
+
+        <section className="admin-panel">
+          <div className="admin-panel__heading">
             <div><span>02</span><h2>Histoire du club</h2></div>
             <p>Présentation et repères chronologiques.</p>
           </div>
@@ -86,7 +115,7 @@ export default async function AdminContentPage({
 
         <section className="admin-panel">
           <div className="admin-panel__heading">
-            <div><span>03</span><h2>Liens et pied de page</h2></div>
+            <div><span>04</span><h2>Liens et pied de page</h2></div>
           </div>
           <div className="admin-form-grid">
             <TextAreaField label="Signature du pied de page" name="footerStatement" value={content.footerStatement} />

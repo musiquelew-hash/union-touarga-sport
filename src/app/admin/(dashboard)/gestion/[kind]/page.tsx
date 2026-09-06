@@ -1,6 +1,6 @@
-import { DatabaseBackup, RefreshCw, RotateCcw } from "lucide-react";
+import { DatabaseBackup, Trash2 } from "lucide-react";
 import { notFound } from "next/navigation";
-import { clearCollectionAction, syncCollectionAction } from "@/app/admin/actions";
+import { clearCollectionAction } from "@/app/admin/actions";
 import { AdminNotice } from "@/components/admin/admin-notice";
 import { AdminNewRecord, AdminRecordEditor } from "@/components/admin/admin-record-form";
 import { AdminSubmitButton } from "@/components/admin/admin-submit-button";
@@ -19,13 +19,13 @@ const sections: Record<CmsKind, { title: string; kicker: string; description: st
     title: "Joueurs",
     kicker: "Équipe première",
     description: "Gérez les fiches, postes, photos et statistiques de l’effectif.",
-    empty: "Aucun joueur n’est encore publié. Ajoutez-en un ou importez l’effectif de l’ancien site.",
+    empty: "Aucun joueur n’est encore publié. Ajoutez-en un depuis ce dashboard.",
   },
   staff: {
     title: "Staff",
     kicker: "Encadrement",
     description: "Gérez les membres des staffs technique, médical et administratif.",
-    empty: "Aucun membre du staff n’est encore publié. Ajoutez-en un ou importez l’ancien site.",
+    empty: "Aucun membre du staff n’est encore publié. Ajoutez-en un depuis ce dashboard.",
   },
   news: {
     title: "Actualités",
@@ -67,25 +67,15 @@ export default async function AdminCollectionPage({
           <p>{section.description}</p>
         </div>
         <div className="admin-heading-actions">
-          <form action={syncCollectionAction}>
-            <input type="hidden" name="kind" value={kind} />
-            <AdminSubmitButton
-              className="admin-button admin-button--primary"
-              confirmMessage={collection.configured ? "L’import remplacera les modifications de cette rubrique. Continuer ?" : undefined}
-              pendingLabel="Import en cours…"
-            >
-              <RefreshCw aria-hidden="true" size={17} /> Importer l’ancien site
-            </AdminSubmitButton>
-          </form>
           <form action={clearCollectionAction}>
             <input type="hidden" name="kind" value={kind} />
             <AdminSubmitButton
               className="admin-button admin-button--secondary"
-              confirmMessage="Supprimer définitivement tous les éléments de cette rubrique ?"
+              confirmMessage="Supprimer définitivement tous les éléments de cette rubrique ? Le remplissage initial ne pourra pas être relancé."
               disabled={!collection.configured}
-              pendingLabel="Réinitialisation…"
+              pendingLabel="Suppression…"
             >
-              <RotateCcw aria-hidden="true" size={17} /> Vider la rubrique
+              <Trash2 aria-hidden="true" size={17} /> Vider la rubrique
             </AdminSubmitButton>
           </form>
         </div>

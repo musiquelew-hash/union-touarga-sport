@@ -21,6 +21,7 @@ export function NewsCard({ article }: { article: NewsSummary }) {
         <small>{article.timestamp ? formatDate(article.timestamp) : "Actualité UTS"}</small>
         <strong>{article.title}</strong>
         <ArrowUpRight aria-hidden="true" size={20} />
+        {article.summary && <p>{article.summary}</p>}
       </span>
     </a>
   );

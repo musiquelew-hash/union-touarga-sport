@@ -21,8 +21,8 @@ export default async function MediaPage() {
         eyebrow="Touarga TV"
         title="Actualités & médias"
         intro="Les dernières images de l'UTS et les publications éditoriales du club, réunies dans un même espace."
-        image="/uts/match-01.jpg"
-        imageAlt="Les joueurs UTS célèbrent un titre au milieu des confettis"
+        image={content.mediaHeaderImageUrl}
+        imageAlt={content.mediaHeaderImageAlt}
         imagePosition="center"
       />
 
@@ -71,7 +71,7 @@ export default async function MediaPage() {
       </section>
 
       <section className="section section--dark social-band">
-        <Image src="/uts/story.jpg" alt="" fill sizes="100vw" />
+        <Image src={content.mediaSocialImageUrl} alt={content.mediaSocialImageAlt} fill sizes="100vw" />
         <div className="shell">
           <div className="section-heading">
             <div>

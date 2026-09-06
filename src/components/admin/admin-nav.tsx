@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  Database,
   ExternalLink,
   FileText,
   Images,
@@ -55,11 +54,11 @@ export function AdminNav({ isSuperAdmin = false, onNavigate }: { isSuperAdmin?: 
 }
 
 export function AdminMobileHeader({
-  databaseReady,
+  crestUrl,
   isSuperAdmin,
   username,
 }: {
-  databaseReady: boolean;
+  crestUrl: string;
   isSuperAdmin: boolean;
   username: string;
 }) {
@@ -68,12 +67,9 @@ export function AdminMobileHeader({
   return (
     <header className="admin-mobile-header">
       <Link className="admin-mobile-header__brand" href="/admin">
-        <Image src="/uts/crest-white.png" alt="" width={34} height={40} />
-        <span><strong>UTS Admin</strong><small>Gestion</small></span>
+        <Image src={crestUrl} alt="" width={34} height={40} />
+        <span><strong>Administration</strong><small>Gestion du club</small></span>
       </Link>
-      <span className={`admin-mobile-header__status${databaseReady ? " is-online" : ""}`}>
-        <Database aria-hidden="true" size={15} /> MySQL
-      </span>
       <button
         aria-controls="admin-mobile-drawer"
         aria-expanded={open}
@@ -102,10 +98,6 @@ export function AdminMobileHeader({
             </div>
             <AdminNav isSuperAdmin={isSuperAdmin} onNavigate={() => setOpen(false)} />
             <div className="admin-sidebar__footer admin-mobile-drawer__footer">
-              <div className={`admin-db-state${databaseReady ? " is-online" : ""}`}>
-                <Database aria-hidden="true" size={16} />
-                <span>{databaseReady ? "MySQL connecté" : "MySQL hors ligne"}</span>
-              </div>
               <Link href="/" target="_blank">
                 <ExternalLink aria-hidden="true" size={16} /> Voir le site
               </Link>

@@ -157,6 +157,7 @@ export type MediaSummary = {
 export type NewsSummary = {
   id: number;
   title: string;
+  summary: string;
   url: string;
   imageUrl: string | null;
   imageAlt: string;

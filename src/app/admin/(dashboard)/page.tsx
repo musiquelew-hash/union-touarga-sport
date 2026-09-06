@@ -1,7 +1,10 @@
 import { ArrowRight, DatabaseZap, RefreshCw } from "lucide-react";
 import Link from "next/link";
-import { syncAllCollectionsAction } from "@/app/admin/actions";
+import { runInitialContentImportAction } from "@/app/admin/actions";
 import { AdminNotice } from "@/components/admin/admin-notice";
+import { AdminSubmitButton } from "@/components/admin/admin-submit-button";
+import { requireAdmin } from "@/lib/admin-auth";
+import { getInitialContentImportStatusSafe } from "@/lib/initial-content-import";
 import { getCmsCountsSafe, isCmsDatabaseConfigured } from "@/lib/relational-cms-db";
 
 const modules = [
@@ -16,8 +19,14 @@ export default async function AdminDashboardPage({
 }: {
   searchParams: Promise<{ saved?: string; error?: string }>;
 }) {
-  const [counts, params] = await Promise.all([getCmsCountsSafe(), searchParams]);
+  const [counts, params, session, importStatus] = await Promise.all([
+    getCmsCountsSafe(),
+    searchParams,
+    requireAdmin(),
+    getInitialContentImportStatusSafe(),
+  ]);
   const databaseConfigured = isCmsDatabaseConfigured();
+  const canImport = session.role === "super_admin" && importStatus !== "completed";
 
   return (
     <div className="admin-page">
@@ -27,14 +36,27 @@ export default async function AdminDashboardPage({
           <h1>Vue d’ensemble</h1>
           <p>Gérez les contenus du club enregistrés dans MySQL. Matchs et classement restent synchronisés par API.</p>
         </div>
-        <form action={syncAllCollectionsAction}>
-          <button className="admin-button admin-button--primary" disabled={!databaseConfigured} type="submit">
-            <RefreshCw aria-hidden="true" size={17} /> Importer l’ancien site
-          </button>
-        </form>
+        {canImport && (
+          <form action={runInitialContentImportAction}>
+            <AdminSubmitButton
+              className="admin-button admin-button--primary"
+              confirmMessage="Cet import initial ne pourra être exécuté qu’une seule fois. Continuer ?"
+              disabled={!databaseConfigured || importStatus === "running"}
+              pendingLabel="Import en cours…"
+            >
+              <RefreshCw aria-hidden="true" size={17} /> Remplir le site une première fois
+            </AdminSubmitButton>
+          </form>
+        )}
       </header>
 
       <AdminNotice saved={params.saved} error={params.error} />
+
+      {importStatus === "completed" && params.saved !== "imported" && (
+        <div className="admin-notice admin-notice--success" role="status">
+          L’import initial est terminé. Les contenus sont maintenant gérés uniquement depuis ce dashboard.
+        </div>
+      )}
 
       <section className="admin-metrics" aria-label="Résumé des contenus gérés">
         {modules.map((module) => (

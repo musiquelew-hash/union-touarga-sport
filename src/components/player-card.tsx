@@ -1,14 +1,27 @@
 import Image from "next/image";
 import type { PlayerSummary } from "@/lib/uts-data";
 
-export function PlayerCard({ player, detailed = false }: { player: PlayerSummary; detailed?: boolean }) {
+export function PlayerCard({
+  player,
+  fallbackImageUrl,
+  detailed = false,
+}: {
+  player: PlayerSummary;
+  fallbackImageUrl: string;
+  detailed?: boolean;
+}) {
   const hasStatistics = [player.appearances, player.goals, player.assists].some((value) => value !== null);
 
   return (
     <article className={`player-card${detailed ? " player-card--detailed" : ""}`}>
       <div className="player-card__image">
         <span className="player-card__number">{player.number || "–"}</span>
-        <Image src={player.imageUrl} alt={`Portrait de ${player.name}`} fill sizes="(max-width: 640px) 50vw, 25vw" />
+        <Image
+          src={player.imageUrl || fallbackImageUrl}
+          alt={`Portrait de ${player.name}`}
+          fill
+          sizes="(max-width: 640px) 50vw, 25vw"
+        />
       </div>
       <div className="player-card__body">
         <span>{player.position}</span>

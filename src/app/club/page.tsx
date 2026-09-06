@@ -18,8 +18,8 @@ export default async function ClubPage() {
         eyebrow="Rabat · Touarga"
         title="Le club"
         intro="Une histoire collective née dans un quartier, portée par la formation et tournée vers l'exigence du plus haut niveau."
-        image="/uts/hero-candidate.jpg"
-        imageAlt="La grande famille de l’Union Touarga Sport réunie à Rabat"
+        image={content.clubHeaderImageUrl}
+        imageAlt={content.clubHeaderImageAlt}
         imagePosition="bottom"
       />
 

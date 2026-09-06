@@ -10,9 +10,10 @@ type SiteShellProps = {
   stripPrimary: string;
   stripSecondary: string;
   footerStatement: string;
+  crestWhiteUrl: string;
 };
 
-export function SiteShell({ children, stripPrimary, stripSecondary, footerStatement }: SiteShellProps) {
+export function SiteShell({ children, stripPrimary, stripSecondary, footerStatement, crestWhiteUrl }: SiteShellProps) {
   const pathname = usePathname();
 
   if (pathname.startsWith("/admin")) {
@@ -21,9 +22,9 @@ export function SiteShell({ children, stripPrimary, stripSecondary, footerStatem
 
   return (
     <>
-      <SiteHeader stripPrimary={stripPrimary} stripSecondary={stripSecondary} />
+      <SiteHeader stripPrimary={stripPrimary} stripSecondary={stripSecondary} crestUrl={crestWhiteUrl} />
       <main>{children}</main>
-      <SiteFooter statement={footerStatement} />
+      <SiteFooter statement={footerStatement} crestUrl={crestWhiteUrl} />
     </>
   );
 }

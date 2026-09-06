@@ -18,9 +18,11 @@ const navigation = [
 export function SiteHeader({
   stripPrimary = "Rabat · Depuis 1969",
   stripSecondary = "Union · Formation · Ambition",
+  crestUrl,
 }: {
   stripPrimary?: string;
   stripSecondary?: string;
+  crestUrl?: string;
 }) {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
@@ -35,7 +37,7 @@ export function SiteHeader({
       </div>
       <header className="site-header">
         <div className="shell site-header__inner">
-          <Brand compact crestOnly />
+          <Brand compact crestOnly crestUrl={crestUrl} />
           <nav className="desktop-nav" aria-label="Navigation principale">
             {navigation.map((item) => (
               <Link

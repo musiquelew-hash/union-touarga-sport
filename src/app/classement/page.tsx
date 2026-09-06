@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Shield } from "lucide-react";
 import { PageHeading } from "@/components/page-heading";
 import { StandingsTable } from "@/components/standings-table";
+import { getSiteContent } from "@/lib/site-content";
 import { getUtsData, UTS_TEAM_ID } from "@/lib/uts-data";
 
 export const metadata: Metadata = {
@@ -10,7 +11,7 @@ export const metadata: Metadata = {
 };
 
 export default async function StandingsPage() {
-  const data = await getUtsData();
+  const [data, content] = await Promise.all([getUtsData(), getSiteContent()]);
   const utsRow = data.standings.find((row) => row.teamId === UTS_TEAM_ID);
   const seasonHasStarted = data.standings.some((row) => row.played > 0);
 
@@ -20,8 +21,8 @@ export default async function StandingsPage() {
         eyebrow="Botola Pro"
         title="Classement"
         intro="Le tableau complet du championnat, avec la position de l'UTS mise en avant et des données actualisées automatiquement."
-        image="/uts/match-03.jpg"
-        imageAlt="Remise d’un trophée à l’Union Touarga Sport"
+        image={content.standingsHeaderImageUrl}
+        imageAlt={content.standingsHeaderImageAlt}
         imagePosition="center"
       />
 
