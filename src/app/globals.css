@@ -818,6 +818,7 @@ img {
 }
 
 .players-grid {
+  align-items: start;
   display: grid;
   gap: 18px;
   grid-template-columns: repeat(4, minmax(0, 1fr));
