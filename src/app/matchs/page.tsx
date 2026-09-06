@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { CalendarClock, Trophy } from "lucide-react";
-import { DataStatus } from "@/components/data-status";
 import { MatchCard } from "@/components/match-card";
 import { PageHeading } from "@/components/page-heading";
 import { getUtsData } from "@/lib/uts-data";
@@ -19,7 +18,6 @@ export default async function MatchesPage() {
         eyebrow="Saison en cours"
         title="Matchs & résultats"
         intro="Les prochaines affiches et les derniers scores de l'UTS, synchronisés automatiquement au rythme des compétitions."
-        aside={<DataStatus data={data} inverse />}
         image="/uts/story.jpg"
         imageAlt="Le staff de l’Union Touarga Sport au bord du terrain"
         imagePosition="center"

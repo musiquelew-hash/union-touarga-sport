@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Barlow_Condensed, Manrope } from "next/font/google";
-import { SiteFooter } from "@/components/site-footer";
-import { SiteHeader } from "@/components/site-header";
+import { SiteShell } from "@/components/site-shell";
+import { getSiteContent } from "@/lib/site-content";
 import "./globals.css";
 
 const manrope = Manrope({
@@ -31,7 +31,9 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default async function RootLayout({ children }: LayoutProps<"/">) {
+  const content = await getSiteContent();
+
   return (
     <html
       lang="fr"
@@ -39,9 +41,13 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       data-scroll-behavior="smooth"
     >
       <body>
-        <SiteHeader />
-        <main>{children}</main>
-        <SiteFooter />
+        <SiteShell
+          stripPrimary={content.stripPrimary}
+          stripSecondary={content.stripSecondary}
+          footerStatement={content.footerStatement}
+        >
+          {children}
+        </SiteShell>
       </body>
     </html>
   );

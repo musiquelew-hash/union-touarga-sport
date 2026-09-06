@@ -1,12 +1,12 @@
 import { ArrowRight, ArrowUpRight, Shield } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { DataStatus } from "@/components/data-status";
 import { MatchCard } from "@/components/match-card";
 import { NewsCard } from "@/components/news-card";
 import { PlayerCard } from "@/components/player-card";
 import { StandingsTable } from "@/components/standings-table";
 import { formatShortDate, formatTime } from "@/lib/format";
+import { getSiteContent } from "@/lib/site-content";
 import { getUtsData, UTS_TEAM_ID } from "@/lib/uts-data";
 
 function getHomeStandings(rows: Awaited<ReturnType<typeof getUtsData>>["standings"]) {
@@ -32,7 +32,7 @@ function getFeaturedPlayers(players: Awaited<ReturnType<typeof getUtsData>>["pla
 }
 
 export default async function Home() {
-  const data = await getUtsData();
+  const [data, content] = await Promise.all([getUtsData(), getSiteContent()]);
   const nextMatch = data.nextMatch;
   const standings = getHomeStandings(data.standings);
   const featuredPlayers = getFeaturedPlayers(data.players);
@@ -51,17 +51,15 @@ export default async function Home() {
         <div className="shell home-hero__inner">
           <div className="home-hero__content">
             <div className="home-hero__meta">
-              <DataStatus data={data} inverse />
               <span>Équipe première · Botola Pro</span>
             </div>
-            <p className="home-hero__kicker">Rabat · Depuis 1969</p>
+            <p className="home-hero__kicker">{content.heroKicker}</p>
             <h1>
-              Union
-              <span>Touarga Sport</span>
+              {content.heroTitleTop}
+              <span>{content.heroTitleBottom}</span>
             </h1>
             <p className="home-hero__lead">
-              <strong>Fiers de nos valeurs.</strong> Une identité née à Touarga, une ambition portée par
-              toute une ville et un football qui avance ensemble.
+              <strong>{content.heroLeadStrong}</strong> {content.heroLead}
             </p>
             <div className="home-hero__actions">
               <Link className="button button--yellow" href="/matchs">
@@ -182,8 +180,8 @@ export default async function Home() {
           ) : (
             <div className="empty-state">
               <Shield aria-hidden="true" size={32} />
-              <h2>Effectif en cours de synchronisation</h2>
-              <p>Les fiches des joueurs reviendront automatiquement dès que la source sera disponible.</p>
+              <h2>Aucun joueur publié</h2>
+              <p>L’effectif sera affiché après sa publication depuis le dashboard.</p>
             </div>
           )}
         </div>
@@ -201,11 +199,8 @@ export default async function Home() {
         </div>
         <div className="home-manifesto__copy">
           <span className="eyebrow eyebrow--yellow">03 · Plus qu’un club</span>
-          <h2>Former le jeu.<br />Former les hommes.</h2>
-          <p>
-            L’Union Touarga Sport porte une culture de proximité, de formation et de persévérance. Le club
-            grandit sans perdre le lien qui l’unit à sa ville et à celles et ceux qui l’accompagnent.
-          </p>
+          <h2>{content.manifestoTitle}</h2>
+          <p>{content.manifestoCopy}</p>
           <div className="home-manifesto__facts" aria-label="Repères du club">
             <span><strong>1969</strong> Fondation</span>
             <span><strong>Rabat</strong> Notre ville</span>
@@ -224,9 +219,9 @@ export default async function Home() {
               <span className="eyebrow">04 · Actualités officielles</span>
               <h2>Touarga, maintenant</h2>
             </div>
-            <a className="button button--dark" href="https://touargaclub.ma/nos-news/" target="_blank" rel="noreferrer">
-              Toutes les actualités <ArrowUpRight aria-hidden="true" size={17} />
-            </a>
+            <Link className="button button--dark" href="/medias">
+              Toutes les actualités <ArrowRight aria-hidden="true" size={17} />
+            </Link>
           </div>
           {data.news.length > 0 ? (
             <div className="news-grid home-news-grid">
@@ -237,8 +232,8 @@ export default async function Home() {
           ) : (
             <div className="empty-state">
               <Shield aria-hidden="true" size={32} />
-              <h2>Actualités en cours de synchronisation</h2>
-              <p>Les publications officielles reviendront automatiquement dès que le flux sera disponible.</p>
+              <h2>Aucune actualité publiée</h2>
+              <p>Les publications apparaîtront après leur mise en ligne depuis le dashboard.</p>
             </div>
           )}
         </div>
@@ -255,20 +250,33 @@ export default async function Home() {
               Toute la médiathèque <ArrowUpRight aria-hidden="true" size={17} />
             </Link>
           </div>
-          <div className="home-gallery">
-            <figure className="home-gallery__item home-gallery__item--lead">
-              <Image src="/uts/match-01.jpg" alt="Célébration du titre de l’équipe futsal UTS" fill sizes="(max-width: 820px) 100vw, 58vw" />
-              <figcaption><span>Futsal</span><strong>Le titre, ensemble</strong></figcaption>
-            </figure>
-            <figure className="home-gallery__item">
-              <Image src="/uts/match-02.jpg" alt="Photo collective des champions UTS" fill sizes="(max-width: 820px) 100vw, 34vw" />
-              <figcaption><span>Club</span><strong>Une fierté partagée</strong></figcaption>
-            </figure>
-            <figure className="home-gallery__item">
-              <Image src="/uts/portrait.jpg" alt="Membre du staff UTS au bord du terrain" fill sizes="(max-width: 820px) 100vw, 34vw" />
-              <figcaption><span>Terrain</span><strong>L’exigence au quotidien</strong></figcaption>
-            </figure>
-          </div>
+          {data.media.length > 0 ? (
+            <div className="home-gallery">
+              {data.media.slice(0, 3).map((media, index) => (
+                <a
+                  className={`home-gallery__item${index === 0 ? " home-gallery__item--lead" : ""}`}
+                  href={media.url}
+                  key={media.id}
+                  rel="noreferrer"
+                  target="_blank"
+                >
+                  <Image
+                    src={media.thumbnailUrl || "/uts/team.jpg"}
+                    alt=""
+                    fill
+                    sizes={index === 0 ? "(max-width: 820px) 100vw, 58vw" : "(max-width: 820px) 100vw, 34vw"}
+                  />
+                  <span className="home-gallery__caption"><span>Médiathèque</span><strong>{media.title}</strong></span>
+                </a>
+              ))}
+            </div>
+          ) : (
+            <div className="empty-state empty-state--dark">
+              <Shield aria-hidden="true" size={32} />
+              <h2>Aucun média publié</h2>
+              <p>Les images et vidéos apparaîtront après leur publication depuis le dashboard.</p>
+            </div>
+          )}
         </div>
       </section>
     </>

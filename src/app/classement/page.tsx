@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Shield } from "lucide-react";
-import { DataStatus } from "@/components/data-status";
 import { PageHeading } from "@/components/page-heading";
 import { StandingsTable } from "@/components/standings-table";
 import { getUtsData, UTS_TEAM_ID } from "@/lib/uts-data";
@@ -21,7 +20,6 @@ export default async function StandingsPage() {
         eyebrow="Botola Pro"
         title="Classement"
         intro="Le tableau complet du championnat, avec la position de l'UTS mise en avant et des données actualisées automatiquement."
-        aside={<DataStatus data={data} inverse />}
         image="/uts/match-03.jpg"
         imageAlt="Remise d’un trophée à l’Union Touarga Sport"
         imagePosition="center"

@@ -15,7 +15,13 @@ const navigation = [
   { href: "/medias", label: "Médias" },
 ];
 
-export function SiteHeader() {
+export function SiteHeader({
+  stripPrimary = "Rabat · Depuis 1969",
+  stripSecondary = "Union · Formation · Ambition",
+}: {
+  stripPrimary?: string;
+  stripSecondary?: string;
+}) {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
 
@@ -23,13 +29,13 @@ export function SiteHeader() {
     <>
       <div className="club-strip">
         <div className="shell club-strip__inner">
-          <span>Rabat · Depuis 1969</span>
-          <span>Union · Formation · Ambition</span>
+          <span>{stripPrimary}</span>
+          <span>{stripSecondary}</span>
         </div>
       </div>
       <header className="site-header">
         <div className="shell site-header__inner">
-          <Brand compact />
+          <Brand compact crestOnly />
           <nav className="desktop-nav" aria-label="Navigation principale">
             {navigation.map((item) => (
               <Link

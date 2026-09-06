@@ -1,0 +1,20 @@
+CREATE TABLE IF NOT EXISTS cms_records (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  kind VARCHAR(32) NOT NULL,
+  record_key VARCHAR(128) NOT NULL,
+  payload JSON NOT NULL,
+  is_published BOOLEAN NOT NULL DEFAULT TRUE,
+  sort_order INT NOT NULL DEFAULT 0,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  UNIQUE KEY cms_records_kind_key (kind, record_key),
+  KEY cms_records_listing (kind, is_published, sort_order)
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS cms_settings (
+  setting_key VARCHAR(100) NOT NULL,
+  payload JSON NOT NULL,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (setting_key)
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;

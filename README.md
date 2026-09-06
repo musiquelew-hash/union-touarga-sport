@@ -1,14 +1,17 @@
 # Union Touarga Sport
 
-Site moderne et responsive consacré à l'Union Touarga Sport. Il centralise les matchs, résultats, classement, effectif, actualités et médias du club à partir de sources publiques mises à jour automatiquement.
+Site moderne et responsive consacré à l'Union Touarga Sport. Les matchs et le classement sont synchronisés avec des APIs sportives publiques; les joueurs, le staff, les actualités, les médias et les textes du site sont publiés depuis MySQL.
 
 ## Fonctionnalités
 
 - Calendrier et résultats de l'équipe première
 - Classement de la Botola Pro
-- Effectif classé par poste
+- Effectif classé par poste et staff par département
 - Actualités et galerie de photos officielles
 - Histoire et identité du club
+- Dashboard administrateur pour gérer les textes, joueurs, staff, actualités et médias
+- Publication, masquage, ordre d'affichage et import ponctuel de l'ancien site officiel
+- Stockage éditorial MySQL; aucun fallback public pour les contenus administrables
 - Interface responsive aux couleurs de l'UTS
 - Revalidation automatique des données toutes les cinq minutes
 
@@ -18,10 +21,27 @@ Prérequis : Node.js 20 ou version ultérieure.
 
 ```bash
 npm install
+npm run db:seed
 npm run dev
 ```
 
-Le site est alors accessible sur [http://localhost:3000](http://localhost:3000).
+Le site est alors accessible sur [http://localhost:8080](http://localhost:8080).
+
+### Administration
+
+Copier `.env.example` vers `.env.local`, puis renseigner :
+
+- `MYSQL_URL` : URL de connexion MySQL. `DATABASE_URL` est également acceptée.
+- `PORT` : port HTTP du service, `8080` par défaut.
+- `ADMIN_USERNAME` : identifiant de connexion, `admin` par défaut.
+- `ADMIN_PASSWORD` : mot de passe administrateur unique d'au moins 12 caractères.
+- `ADMIN_SESSION_SECRET` : secret aléatoire d'au moins 32 caractères, distinct du mot de passe.
+
+Le dashboard est accessible sur [http://localhost:8080/admin](http://localhost:8080/admin). Le schéma est créé automatiquement lors de la première connexion à MySQL; une copie déclarative est disponible dans `db/schema.sql`.
+
+`npm run db:seed` récupère une fois les joueurs, le staff, les actualités et les médias de l'ancien site officiel, puis les enregistre dans MySQL. La commande remplace ces quatre collections. Elle initialise les textes du site seulement s'ils n'existent pas encore, afin de ne jamais écraser les modifications éditoriales.
+
+Sans MySQL, les matchs et le classement restent disponibles via les APIs publiques, mais les rubriques éditoriales affichent un état vide. L'administration signale la base hors ligne et refuse proprement les écritures.
 
 ## Vérifications
 
@@ -30,14 +50,13 @@ npm run lint
 npm run build
 ```
 
-Pour tester la version de production sur le port utilisé par Railway :
+Pour tester la version de production :
 
-```powershell
-$env:PORT=8080
+```bash
 npm run start
 ```
 
-Le serveur écoute alors sur [http://localhost:8080](http://localhost:8080).
+Le serveur écoute sur [http://localhost:8080](http://localhost:8080) par défaut. Si Railway fournit `PORT`, le serveur utilise automatiquement sa valeur.
 
 ## Déploiement sur Railway
 
@@ -60,13 +79,23 @@ Les commandes déjà définies dans `package.json` sont :
 - Build : `npm run build`
 - Démarrage : `npm run start`
 
-Aucune variable d'environnement n'est requise pour le déploiement actuel.
+### Ajouter MySQL et activer le dashboard
+
+1. Dans le même projet Railway, choisir **Add > Database > MySQL**.
+2. Ouvrir le service Next.js puis **Variables**.
+3. Ajouter une référence vers l'URL MySQL sous le nom `MYSQL_URL`. Railway expose généralement `${{MySQL.MYSQL_URL}}` lorsque le service s'appelle `MySQL`.
+4. Ajouter `PORT=8080`.
+5. Ajouter `ADMIN_USERNAME`, `ADMIN_PASSWORD` et `ADMIN_SESSION_SECRET` comme variables privées.
+6. Redéployer le service puis ouvrir `/admin`.
+
+Après le premier déploiement, exécuter `npm run db:seed` avec `MYSQL_URL` configurée, ou utiliser **Importer l’ancien site** dans le dashboard. Les contenus éditoriaux restent ensuite modifiables exclusivement dans l'administration.
 
 ## Sources
 
-- Effectif, portraits et classement : API WordPress publique du site officiel de l'Union Touarga Sport
-- Calendrier et résultats : API publique TheSportsDB
+- Calendrier et résultats : APIs publiques TheSportsDB et Sofascore
+- Classement : Sofascore, avec le tableau public du site officiel comme seconde source sportive
 - Données sportives complémentaires : Sofascore lorsqu'il est disponible
-- Actualités et photographies : publications officielles de l'Union Touarga Sport
+- Joueurs, staff, actualités, médias et textes : MySQL
+- Import initial éditorial : ancien site WordPress officiel de l'Union Touarga Sport, uniquement sur action explicite
 
-Les données sont remises à jour automatiquement par Next.js avec une fréquence adaptée à chaque source.
+Seules les données sportives sont remises à jour automatiquement par Next.js. Les contenus éditoriaux changent uniquement après une action dans le dashboard ou un nouveau seed explicite.
