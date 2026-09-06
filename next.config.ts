@@ -13,6 +13,11 @@ const nextConfig: NextConfig = {
         hostname: "touargaclub.ma",
         pathname: "/wp-content/uploads/**",
       },
+      {
+        protocol: "https",
+        hostname: "r2.thesportsdb.com",
+        pathname: "/images/**",
+      },
     ],
   },
 };

@@ -81,12 +81,20 @@ export default async function Home() {
               </div>
               <div className="hero-fixture__teams">
                 <div className="hero-fixture__team">
-                  <Image src={nextMatch.home.imageUrl} alt="" width={52} height={52} />
+                  {nextMatch.home.imageUrl ? (
+                    <Image src={nextMatch.home.imageUrl} alt="" width={52} height={52} />
+                  ) : (
+                    <span className="hero-fixture__monogram" aria-hidden="true">{nextMatch.home.code}</span>
+                  )}
                   <strong>{nextMatch.home.shortName}</strong>
                 </div>
                 <span className="hero-fixture__versus">VS</span>
                 <div className="hero-fixture__team">
-                  <Image src={nextMatch.away.imageUrl} alt="" width={52} height={52} />
+                  {nextMatch.away.imageUrl ? (
+                    <Image src={nextMatch.away.imageUrl} alt="" width={52} height={52} />
+                  ) : (
+                    <span className="hero-fixture__monogram" aria-hidden="true">{nextMatch.away.code}</span>
+                  )}
                   <strong>{nextMatch.away.shortName}</strong>
                 </div>
               </div>

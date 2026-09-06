@@ -1,7 +1,12 @@
 import { decode } from "html-entities";
+import { load } from "cheerio";
 
 const SOFASCORE_API = "https://www.sofascore.com/api/v1";
 const UTS_OFFICIAL_API = "https://touargaclub.ma/wp-json/wp/v2";
+const SPORTSDB_API = "https://www.thesportsdb.com/api/v1/json/123";
+const OFFICIAL_TEAM_PAGE_ID = 4523;
+const SPORTSDB_UTS_TEAM_ID = 140801;
+const SPORTSDB_BOTOLA_ID = 4520;
 
 export const UTS_TEAM_ID = 118834;
 export const BOTOLA_TOURNAMENT_ID = 937;
@@ -75,6 +80,40 @@ type SofaMedia = {
   date?: number;
 };
 
+type SportsDbTeam = {
+  idTeam?: string;
+  strTeam?: string;
+  strTeamShort?: string;
+  strLocation?: string;
+  strStadium?: string;
+  intStadiumCapacity?: string;
+  strBadge?: string;
+};
+
+type SportsDbEvent = {
+  idEvent?: string;
+  idHomeTeam?: string;
+  idAwayTeam?: string;
+  strHomeTeam?: string;
+  strAwayTeam?: string;
+  strHomeTeamBadge?: string;
+  strAwayTeamBadge?: string;
+  intHomeScore?: string | number | null;
+  intAwayScore?: string | number | null;
+  intRound?: string | number | null;
+  strLeague?: string;
+  strSeason?: string;
+  strTimestamp?: string;
+  dateEvent?: string;
+  strTime?: string;
+  strVenue?: string;
+};
+
+type OfficialTeamPage = {
+  modified?: string;
+  content?: { rendered?: string };
+};
+
 type OfficialPost = {
   id: number;
   date?: string;
@@ -116,7 +155,7 @@ export type TeamSummarySmall = {
   name: string;
   shortName: string;
   code: string;
-  imageUrl: string;
+  imageUrl: string | null;
 };
 
 export type PlayerSummary = {
@@ -149,7 +188,7 @@ export type StandingSummary = {
   goalDifference: number;
   points: number;
   zone: string | null;
-  imageUrl: string;
+  imageUrl: string | null;
 };
 
 export type MediaSummary = {
@@ -231,7 +270,7 @@ async function safeFetch<T>(path: string, revalidate: number): Promise<T | null>
   }
 }
 
-async function safeFetchOfficial<T>(path: string, revalidate: number): Promise<T | null> {
+async function safeFetchOfficial<T>(path: string, revalidate: number, timeout = 8000): Promise<T | null> {
   try {
     const response = await fetch(`${UTS_OFFICIAL_API}${path}`, {
       headers: {
@@ -239,6 +278,24 @@ async function safeFetchOfficial<T>(path: string, revalidate: number): Promise<T
         "User-Agent": "UTS-Site/1.0",
       },
       next: { revalidate, tags: ["uts-official-content"] },
+      signal: AbortSignal.timeout(timeout),
+    });
+
+    if (!response.ok) return null;
+    return response.json() as Promise<T>;
+  } catch {
+    return null;
+  }
+}
+
+async function safeFetchSportsDb<T>(path: string, revalidate: number): Promise<T | null> {
+  try {
+    const response = await fetch(`${SPORTSDB_API}${path}`, {
+      headers: {
+        Accept: "application/json",
+        "User-Agent": "UTS-Site/1.0",
+      },
+      next: { revalidate, tags: ["uts-sports-data"] },
       signal: AbortSignal.timeout(8000),
     });
 
@@ -390,6 +447,214 @@ function normalizeStandings(rows: SofaStandingRow[]) {
   }));
 }
 
+function normalizeLookup(value: string) {
+  return decode(value)
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-zA-Z0-9]+/g, " ")
+    .trim()
+    .toLowerCase();
+}
+
+function stableNumericId(value: string) {
+  let hash = 0;
+
+  for (const character of value) {
+    hash = (hash * 31 + character.charCodeAt(0)) >>> 0;
+  }
+
+  return hash || 1;
+}
+
+function isUtsTeam(name: string) {
+  const normalized = normalizeLookup(name);
+  return normalized.includes("union touarga") || normalized.includes("us touarga");
+}
+
+function cleanOfficialName(value: string) {
+  const normalized = decode(value)
+    .replace(/\s*\(\d+\)\s*$/, "")
+    .replace(/^[_\s-]+|[_\s-]+$/g, "")
+    .replace(/[_-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLocaleLowerCase("fr");
+
+  return normalized
+    .split(" ")
+    .map((part) => part.charAt(0).toLocaleUpperCase("fr") + part.slice(1))
+    .join(" ");
+}
+
+function integerValue(value: string) {
+  const parsed = Number.parseInt(value.replace(/[^\d-]/g, ""), 10);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function parseOfficialSportsPage(html: string) {
+  if (!html) {
+    return { players: [] as PlayerSummary[], standings: [] as StandingSummary[], season: null as string | null };
+  }
+
+  const $ = load(html);
+  const positionHeadings = new Map<string, PlayerSummary["position"]>([
+    ["gardiens", "Gardien"],
+    ["defenseurs", "Défenseur"],
+    ["milieux de terrain", "Milieu"],
+    ["attaquants", "Attaquant"],
+  ]);
+  const players: PlayerSummary[] = [];
+  const seenPlayers = new Set<string>();
+  let currentPosition: PlayerSummary["position"] | null = null;
+
+  $("h4, img").each((_index, element) => {
+    const node = $(element);
+
+    if (node.is("h4")) {
+      currentPosition = positionHeadings.get(normalizeLookup(node.text())) || null;
+      return;
+    }
+
+    if (!currentPosition) return;
+
+    const name = cleanOfficialName(node.attr("alt") || "");
+    const imageUrl = node.attr("data-lazy-src") || node.attr("data-src") || node.attr("src") || "";
+    const key = normalizeLookup(name);
+
+    if (!name || !key || seenPlayers.has(key) || !imageUrl.startsWith("http")) return;
+    seenPlayers.add(key);
+    players.push({
+      id: stableNumericId(`player:${key}`),
+      name,
+      shortName: name,
+      number: null,
+      position: currentPosition,
+      age: null,
+      height: null,
+      foot: null,
+      nationality: "N.C.",
+      countryCode: null,
+      imageUrl,
+      appearances: null,
+      goals: null,
+      assists: null,
+      rating: null,
+    });
+  });
+
+  const standings: StandingSummary[] = [];
+  $("table").first().find("tr").each((_index, element) => {
+    const cells = $(element)
+      .find("td")
+      .map((_cellIndex, cell) => $(cell).text().replace(/\s+/g, " ").trim())
+      .get();
+
+    if (cells.length < 10) return;
+
+    const team = cells[1];
+    const uts = isUtsTeam(team);
+    standings.push({
+      position: integerValue(cells[0]),
+      teamId: uts ? UTS_TEAM_ID : stableNumericId(`team:${normalizeLookup(team)}`),
+      team,
+      shortName: uts ? "Union Touarga" : team,
+      played: integerValue(cells[2]),
+      won: integerValue(cells[3]),
+      drawn: integerValue(cells[4]),
+      lost: integerValue(cells[5]),
+      goalDifference: integerValue(cells[8]),
+      points: integerValue(cells[9]),
+      zone: null,
+      imageUrl: uts ? "/uts/crest-color.png" : null,
+    });
+  });
+
+  const seasonMatch = $.root().text().match(/\b(20\d{2})\s*[-/]\s*(20\d{2})\b/);
+  const season = seasonMatch ? `${seasonMatch[1]}/${seasonMatch[2].slice(-2)}` : null;
+
+  return { players, standings, season };
+}
+
+function footballSeasons(referenceDate = new Date()) {
+  const year = referenceDate.getUTCFullYear();
+  const startYear = referenceDate.getUTCMonth() >= 6 ? year : year - 1;
+
+  return {
+    current: `${startYear}-${startYear + 1}`,
+    previous: `${startYear - 1}-${startYear}`,
+  };
+}
+
+function nullableNumber(value?: string | number | null) {
+  if (value === null || value === undefined || value === "") return null;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function teamCode(name: string) {
+  if (isUtsTeam(name)) return "UTS";
+  const words = name.split(/\s+/).filter(Boolean);
+  return (words.length > 1 ? words.map((word) => word[0]).join("") : name.slice(0, 3)).slice(0, 3).toUpperCase();
+}
+
+function toSportsDbTeam(id: string | undefined, name: string, badge?: string): TeamSummarySmall {
+  const numericId = Number(id);
+  const uts = numericId === SPORTSDB_UTS_TEAM_ID || isUtsTeam(name);
+
+  return {
+    id: uts ? UTS_TEAM_ID : Number.isFinite(numericId) && numericId > 0 ? numericId : stableNumericId(`team:${normalizeLookup(name)}`),
+    name,
+    shortName: uts ? "Union Touarga" : name,
+    code: teamCode(name),
+    imageUrl: uts ? "/uts/crest-color.png" : badge?.startsWith("http") ? badge : null,
+  };
+}
+
+function normalizeSportsDbEvent(event: SportsDbEvent): MatchSummary | null {
+  const homeName = event.strHomeTeam?.trim();
+  const awayName = event.strAwayTeam?.trim();
+  const dateTime = event.strTimestamp || (event.dateEvent ? `${event.dateEvent}T${event.strTime || "00:00:00"}Z` : "");
+  const milliseconds = Date.parse(dateTime);
+
+  if (!homeName || !awayName || !Number.isFinite(milliseconds)) return null;
+
+  const homeScore = nullableNumber(event.intHomeScore);
+  const awayScore = nullableNumber(event.intAwayScore);
+
+  return {
+    id: nullableNumber(event.idEvent) || stableNumericId(`event:${homeName}:${awayName}:${dateTime}`),
+    timestamp: Math.floor(milliseconds / 1000),
+    status: homeScore !== null && awayScore !== null ? "finished" : "scheduled",
+    competition: event.strLeague || "Botola Pro",
+    season: event.strSeason?.replace("-20", "/") || "Saison en cours",
+    round: nullableNumber(event.intRound),
+    home: toSportsDbTeam(event.idHomeTeam, homeName, event.strHomeTeamBadge),
+    away: toSportsDbTeam(event.idAwayTeam, awayName, event.strAwayTeamBadge),
+    homeScore,
+    awayScore,
+    venue: event.strVenue?.trim() || null,
+  };
+}
+
+function normalizeSportsDbEvents(...collections: (SportsDbEvent[] | null | undefined)[]) {
+  const uniqueEvents = new Map<string, SportsDbEvent>();
+
+  collections.flatMap((events) => events || []).forEach((event) => {
+    const key = event.idEvent || `${event.strHomeTeam}:${event.strAwayTeam}:${event.strTimestamp || event.dateEvent}`;
+    uniqueEvents.set(key, event);
+  });
+
+  return [...uniqueEvents.values()]
+    .filter((event) =>
+      event.idHomeTeam === String(SPORTSDB_UTS_TEAM_ID) ||
+      event.idAwayTeam === String(SPORTSDB_UTS_TEAM_ID) ||
+      isUtsTeam(event.strHomeTeam || "") ||
+      isUtsTeam(event.strAwayTeam || ""),
+    )
+    .map(normalizeSportsDbEvent)
+    .filter((event): event is MatchSummary => event !== null);
+}
+
 function normalizeMedia(items: SofaMedia[]) {
   return items
     .filter((item) => item.title && item.url)
@@ -422,7 +687,22 @@ function normalizeNews(posts: OfficialPost[]) {
 }
 
 export async function getUtsData(): Promise<UtsData> {
-  const [teamResponse, playersResponse, nextResponse, lastResponse, mediaResponse, seasonsResponse, newsResponse] =
+  const seasons = footballSeasons();
+  const [
+    teamResponse,
+    playersResponse,
+    nextResponse,
+    lastResponse,
+    mediaResponse,
+    seasonsResponse,
+    newsResponse,
+    officialTeamPage,
+    sportsTeamResponse,
+    sportsNextResponse,
+    sportsLastResponse,
+    sportsCurrentSeasonResponse,
+    sportsPreviousSeasonResponse,
+  ] =
     await Promise.all([
       safeFetch<{
         team: SofaTeam & {
@@ -439,6 +719,18 @@ export async function getUtsData(): Promise<UtsData> {
         21600,
       ),
       safeFetchOfficial<OfficialPost[]>("/posts?per_page=6&_embed=1", 1800),
+      safeFetchOfficial<OfficialTeamPage>(`/pages/${OFFICIAL_TEAM_PAGE_ID}?context=view`, 1800, 30000),
+      safeFetchSportsDb<{ teams?: SportsDbTeam[] | null }>("/searchteams.php?t=Union%20Touarga%20Sport", 21600),
+      safeFetchSportsDb<{ events?: SportsDbEvent[] | null }>(`/eventsnext.php?id=${SPORTSDB_UTS_TEAM_ID}`, 300),
+      safeFetchSportsDb<{ events?: SportsDbEvent[] | null }>(`/eventslast.php?id=${SPORTSDB_UTS_TEAM_ID}`, 300),
+      safeFetchSportsDb<{ events?: SportsDbEvent[] | null }>(
+        `/eventsseason.php?id=${SPORTSDB_BOTOLA_ID}&s=${seasons.current}`,
+        600,
+      ),
+      safeFetchSportsDb<{ events?: SportsDbEvent[] | null }>(
+        `/eventsseason.php?id=${SPORTSDB_BOTOLA_ID}&s=${seasons.previous}`,
+        21600,
+      ),
     ]);
 
   const nextEvent = newestEvent(nextResponse?.events || [], "scheduled");
@@ -452,6 +744,30 @@ export async function getUtsData(): Promise<UtsData> {
   );
   const liveSlices = [teamResponse, playersResponse, nextResponse, lastResponse, mediaResponse, standingsResponse].filter(Boolean).length;
   const sourceTeam = teamResponse?.team;
+  const sportsTeam = sportsTeamResponse?.teams?.[0];
+  const officialSports = parseOfficialSportsPage(officialTeamPage?.content?.rendered || "");
+  const sofaPlayers = normalizePlayers(playersResponse?.players || []);
+  const sofaStandings = normalizeStandings(standingsResponse?.standings?.[0]?.rows || []);
+  const sofaUpcoming = normalizeEvents(nextResponse?.events || [], "scheduled");
+  const sofaRecent = normalizeEvents(lastResponse?.events || [], "finished").slice(0, 12);
+  const sportsMatches = normalizeSportsDbEvents(
+    sportsNextResponse?.events,
+    sportsLastResponse?.events,
+    sportsCurrentSeasonResponse?.events,
+    sportsPreviousSeasonResponse?.events,
+  );
+  const sportsUpcoming = sportsMatches
+    .filter((match) => match.status === "scheduled")
+    .sort((first, second) => first.timestamp - second.timestamp);
+  const sportsRecent = sportsMatches
+    .filter((match) => match.status === "finished")
+    .sort((first, second) => second.timestamp - first.timestamp)
+    .slice(0, 12);
+  const players = sofaPlayers.length ? sofaPlayers : officialSports.players;
+  const standings = sofaStandings.length ? sofaStandings : officialSports.standings;
+  const upcomingMatches = sofaUpcoming.length ? sofaUpcoming : sportsUpcoming;
+  const recentMatches = sofaRecent.length ? sofaRecent : sportsRecent;
+  const coreSlices = [players.length > 0, standings.length >= 10, upcomingMatches.length + recentMatches.length > 0].filter(Boolean).length;
 
   return {
     team: sourceTeam
@@ -465,19 +781,30 @@ export async function getUtsData(): Promise<UtsData> {
           venue: sourceTeam.venue?.name || fallbackTeam.venue,
           venueCapacity: sourceTeam.venue?.capacity || null,
         }
+      : sportsTeam
+        ? {
+            id: UTS_TEAM_ID,
+            name: sportsTeam.strTeam || fallbackTeam.name,
+            shortName: sportsTeam.strTeamShort || fallbackTeam.shortName,
+            code: fallbackTeam.code,
+            manager: fallbackTeam.manager,
+            city: sportsTeam.strLocation?.split(",")[0]?.trim() || fallbackTeam.city,
+            venue: sportsTeam.strStadium || fallbackTeam.venue,
+            venueCapacity: nullableNumber(sportsTeam.intStadiumCapacity),
+          }
       : fallbackTeam,
-    nextMatch: nextEvent ? normalizeMatch(nextEvent) : fallbackNextMatch,
-    lastMatch: lastEvent ? normalizeMatch(lastEvent) : null,
-    upcomingMatches: nextResponse?.events?.length
-      ? normalizeEvents(nextResponse.events, "scheduled")
-      : [fallbackNextMatch],
-    recentMatches: normalizeEvents(lastResponse?.events || [], "finished").slice(0, 12),
-    players: normalizePlayers(playersResponse?.players || []),
-    standings: normalizeStandings(standingsResponse?.standings?.[0]?.rows || []),
-    standingsSeason: activeSeasonName,
+    nextMatch: upcomingMatches[0] || (nextEvent ? normalizeMatch(nextEvent) : fallbackNextMatch),
+    lastMatch: recentMatches[0] || (lastEvent ? normalizeMatch(lastEvent) : null),
+    upcomingMatches: upcomingMatches.length ? upcomingMatches : [fallbackNextMatch],
+    recentMatches,
+    players,
+    standings,
+    standingsSeason: sofaStandings.length
+      ? activeSeasonName
+      : sportsUpcoming[0]?.season || officialSports.season || seasons.current.replace("-20", "/"),
     media: normalizeMedia(mediaResponse?.media || []),
     news: normalizeNews(newsResponse || []),
-    freshness: liveSlices === 6 ? "live" : liveSlices > 0 ? "partial" : "fallback",
+    freshness: coreSlices === 3 ? "live" : coreSlices > 0 || liveSlices > 0 ? "partial" : "fallback",
     updatedAt: new Date().toISOString(),
   };
 }

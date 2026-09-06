@@ -64,4 +64,9 @@ Aucune variable d'environnement n'est requise pour le déploiement actuel.
 
 ## Sources
 
-Les données sportives proviennent de sources publiques, notamment Sofascore. Les actualités et photographies sont issues des publications officielles de l'Union Touarga Sport.
+- Effectif, portraits et classement : API WordPress publique du site officiel de l'Union Touarga Sport
+- Calendrier et résultats : API publique TheSportsDB
+- Données sportives complémentaires : Sofascore lorsqu'il est disponible
+- Actualités et photographies : publications officielles de l'Union Touarga Sport
+
+Les données sont remises à jour automatiquement par Next.js avec une fréquence adaptée à chaque source.

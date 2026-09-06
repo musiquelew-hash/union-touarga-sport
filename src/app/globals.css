@@ -542,6 +542,25 @@ img {
   width: 52px;
 }
 
+.hero-fixture__monogram,
+.match-team__monogram {
+  align-items: center;
+  background: var(--ink);
+  border-radius: 50%;
+  color: var(--yellow);
+  display: flex;
+  flex: 0 0 auto;
+  font-family: var(--font-display), sans-serif;
+  font-weight: 900;
+  justify-content: center;
+}
+
+.hero-fixture__monogram {
+  font-size: 16px;
+  height: 52px;
+  width: 52px;
+}
+
 .hero-fixture__team strong {
   font-family: var(--font-display), sans-serif;
   font-size: 20px;
@@ -653,6 +672,12 @@ img {
   height: 72px;
   object-fit: contain;
   width: 72px;
+}
+
+.match-team__monogram {
+  font-size: 22px;
+  height: 64px;
+  width: 64px;
 }
 
 .match-team strong {
@@ -796,6 +821,27 @@ img {
   height: 30px;
   object-fit: contain;
   width: 30px;
+}
+
+.standings__club .standings__monogram {
+  align-items: center;
+  background: var(--ink);
+  border-radius: 50%;
+  color: var(--yellow);
+  display: inline-flex;
+  flex: 0 0 30px;
+  font-family: var(--font-display), sans-serif;
+  font-size: 11px;
+  font-weight: 900;
+  height: 30px;
+  justify-content: center;
+  overflow: visible;
+  width: 30px;
+}
+
+.standings__row.is-uts .standings__monogram {
+  background: var(--white);
+  color: var(--ink);
 }
 
 .standings__club span {

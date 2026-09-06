@@ -7,7 +7,11 @@ function Team({ team }: { team: TeamSummarySmall }) {
   return (
     <div className="match-team">
       <span className="match-team__logo">
-        <Image src={team.imageUrl} alt={`Écusson ${team.name}`} width={72} height={72} />
+        {team.imageUrl ? (
+          <Image src={team.imageUrl} alt={`Écusson ${team.name}`} width={72} height={72} />
+        ) : (
+          <span className="match-team__monogram" aria-hidden="true">{team.code}</span>
+        )}
       </span>
       <span>
         <strong>{team.shortName}</strong>

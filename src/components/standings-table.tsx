@@ -22,7 +22,13 @@ export function StandingsTable({ rows, compact = false }: { rows: StandingSummar
         >
           <strong className="standings__position">{row.position}</strong>
           <span className="standings__club">
-            <Image src={row.imageUrl} alt="" width={30} height={30} />
+            {row.imageUrl ? (
+              <Image src={row.imageUrl} alt="" width={30} height={30} />
+            ) : (
+              <span className="standings__monogram" aria-hidden="true">
+                {row.shortName.slice(0, 2).toUpperCase()}
+              </span>
+            )}
             <span>{row.shortName}</span>
           </span>
           <span>{row.played}</span>
