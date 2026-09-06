@@ -2510,6 +2510,12 @@ img {
   border-top-color: #d8d8d2;
 }
 
+.team-section .player-card h3 {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .player-card {
   border: 0;
   box-shadow: 0 10px 34px rgba(17, 17, 15, 0.08);
@@ -3687,6 +3693,72 @@ img {
   grid-column: 1 / -1;
 }
 
+.admin-image-field {
+  display: grid;
+  gap: 8px;
+}
+
+.admin-image-field__label {
+  color: #424a45;
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.admin-image-field__layout {
+  align-items: stretch;
+  display: grid;
+  gap: 14px;
+  grid-template-columns: 180px minmax(0, 1fr);
+}
+
+.admin-image-field__preview {
+  align-items: center;
+  aspect-ratio: 16 / 10;
+  background: #e5e9e6;
+  background-image: var(--admin-image-preview);
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: contain;
+  border: 1px solid #cfd6d1;
+  color: #7c857f;
+  display: flex;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.admin-image-field__controls {
+  display: grid;
+  gap: 10px;
+}
+
+.admin-image-field__upload {
+  align-content: center;
+  background: #f0f4f1;
+  border: 1px dashed #aebbb3;
+  cursor: pointer;
+  min-height: 68px;
+  padding: 10px 12px;
+}
+
+.admin-image-field__upload > span {
+  align-items: center;
+  color: var(--admin-green) !important;
+  display: flex;
+  gap: 7px;
+}
+
+.admin-image-field__upload input {
+  font-size: 11px;
+  min-height: 32px;
+  padding: 4px;
+}
+
+.admin-image-field__upload small {
+  color: #68726c;
+  font-size: 10px;
+}
+
 .admin-form-subheading {
   border-bottom: 1px solid var(--admin-line);
   color: var(--admin-green);
@@ -4224,6 +4296,14 @@ img {
   .admin-form-grid,
   .admin-milestones {
     grid-template-columns: 1fr;
+  }
+
+  .admin-image-field__layout {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-image-field__preview {
+    max-height: 230px;
   }
 
   .admin-metric {

@@ -14,6 +14,7 @@ Site moderne et responsive consacré à l'Union Touarga Sport. Les matchs et le 
 - Remplissage initial unique depuis l'ancien site officiel, déclenché par le super-administrateur
 - Publication, masquage et ordre d'affichage des contenus importés ou créés dans le dashboard
 - Photos officielles initiales conservées localement dans `public/content-images`
+- Aperçu et remplacement direct des images depuis le dashboard
 - Tables MySQL relationnelles dédiées; aucun fallback public pour les contenus administrables
 - Interface responsive aux couleurs de l'UTS
 - Revalidation automatique des données toutes les cinq minutes
@@ -47,7 +48,7 @@ Le dashboard est accessible sur [http://localhost:8080/admin](http://localhost:8
 
 Après la première connexion, le super-administrateur utilise **Remplir le site une première fois** sur la vue d'ensemble. Cette action importe en une seule opération les joueurs, le staff, les actualités et les médias. Son état est enregistré dans `content_imports`; après réussite, le bouton disparaît et l'import ne peut plus être relancé. Les déploiements suivants ne modifient jamais ces contenus.
 
-Les photos présentes au moment de l'import sont déjà copiées dans `public/content-images` et associées aux contenus par `src/data/initial-image-manifest.json`. Toutes les URL d'image et leurs textes alternatifs restent modifiables dans le dashboard, y compris les écussons, les bannières, les visuels de l'accueil et l'image de connexion. `npm run assets:download` sert uniquement à renouveler ces fichiers sources avant un commit; cette commande ne fait pas partie du déploiement.
+Les photos présentes au moment de l'import sont déjà copiées dans `public/content-images` et associées aux contenus par `src/data/initial-image-manifest.json`. Toutes les URL d'image et leurs textes alternatifs restent modifiables dans le dashboard, y compris les écussons, les bannières, les visuels de l'accueil et l'image de connexion. Chaque champ affiche l'image actuelle et permet soit de conserver ou modifier son URL, soit d'importer un nouveau fichier JPEG, PNG, WebP ou GIF de 8 Mo maximum. Les nouveaux fichiers sont validés côté serveur et stockés dans `media_assets` en MySQL afin de rester disponibles après un redéploiement Railway. `npm run assets:download` sert uniquement à renouveler les fichiers sources du premier import avant un commit; cette commande ne fait pas partie du déploiement.
 
 Le bootstrap applicatif avec `ADMIN_USERNAME`, `ADMIN_DISPLAY_NAME` et `ADMIN_PASSWORD` reste disponible comme solution de secours. Ces variables ne réinitialisent jamais un compte existant. Le super-administrateur peut ensuite changer son mot de passe dans `/admin/compte` et gérer les autres accès dans `/admin/administrateurs`; les mots de passe sont hachés avec bcrypt et les opérations sensibles sont consignées dans `admin_audit_log`.
 
@@ -57,6 +58,7 @@ Le bootstrap applicatif avec `ADMIN_USERNAME`, `ADMIN_DISPLAY_NAME` et `ADMIN_PA
 - `staff_members` : staff technique, médical, direction et autres membres
 - `news_articles` : titres, résumés, liens, dates et visuels des actualités
 - `media_items` : médias et miniatures
+- `media_assets` : fichiers image importés depuis le dashboard
 - `site_content` : textes, liens et visuels globaux du site
 - `club_milestones` : jalons historiques ordonnés
 - `admin_users` : comptes, rôles, état et version de session

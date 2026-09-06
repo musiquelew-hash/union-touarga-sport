@@ -25,7 +25,7 @@ export function PlayerCard({
       </div>
       <div className="player-card__body">
         <span>{player.position}</span>
-        <h3>{player.shortName}</h3>
+        <h3 title={player.shortName}>{player.shortName}</h3>
         <div className="player-card__facts">
           <span>{player.age ? `${player.age} ans` : "Âge n.c."}</span>
           <span>{player.nationality}</span>

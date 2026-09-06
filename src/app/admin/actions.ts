@@ -29,6 +29,7 @@ import {
   updateAdminUser,
 } from "@/lib/admin-users";
 import { runInitialContentImport } from "@/lib/initial-content-import";
+import { ImageUploadError, resolveImageField } from "@/lib/media-assets";
 import { defaultSiteContent, type SiteContent } from "@/lib/site-content";
 import {
   type MediaSummary,
@@ -82,6 +83,23 @@ function published(formData: FormData) {
 
 function publicPaths() {
   ["/", "/equipe", "/matchs", "/classement", "/medias", "/club"].forEach((path) => revalidatePath(path));
+}
+
+async function uploadedImages<const Name extends string>(
+  formData: FormData,
+  names: readonly Name[],
+  adminUserId: number,
+  destination: string,
+) {
+  try {
+    const entries = await Promise.all(names.map(async (name) => (
+      [name, await resolveImageField(formData, name, adminUserId)] as const
+    )));
+    return Object.fromEntries(entries) as Record<Name, string>;
+  } catch (error) {
+    if (error instanceof ImageUploadError) redirect(`${destination}?error=image-upload`);
+    throw error;
+  }
 }
 
 async function persist(task: () => Promise<void>, destination: string) {
@@ -165,6 +183,12 @@ const siteContentSchema = z.object({
 
 export async function saveSiteContentAction(formData: FormData) {
   const admin = await requireAdmin();
+  const images = await uploadedImages(formData, [
+    "crestColorUrl", "crestWhiteUrl", "adminLoginImageUrl", "homeHeroImageUrl",
+    "homeManifestoImageUrl", "teamHeaderImageUrl", "matchesHeaderImageUrl",
+    "standingsHeaderImageUrl", "clubHeaderImageUrl", "mediaHeaderImageUrl",
+    "mediaSocialImageUrl", "mediaFallbackImageUrl",
+  ] as const, admin.id, "/admin/contenu");
   const raw: SiteContent = {
     stripPrimary: text(formData, "stripPrimary"),
     stripSecondary: text(formData, "stripSecondary"),
@@ -188,26 +212,26 @@ export async function saveSiteContentAction(formData: FormData) {
     footerStatement: text(formData, "footerStatement"),
     instagramUrl: text(formData, "instagramUrl"),
     youtubeUrl: text(formData, "youtubeUrl"),
-    crestColorUrl: text(formData, "crestColorUrl"),
-    crestWhiteUrl: text(formData, "crestWhiteUrl"),
-    adminLoginImageUrl: text(formData, "adminLoginImageUrl"),
-    homeHeroImageUrl: text(formData, "homeHeroImageUrl"),
+    crestColorUrl: images.crestColorUrl,
+    crestWhiteUrl: images.crestWhiteUrl,
+    adminLoginImageUrl: images.adminLoginImageUrl,
+    homeHeroImageUrl: images.homeHeroImageUrl,
     homeHeroImageAlt: text(formData, "homeHeroImageAlt"),
-    homeManifestoImageUrl: text(formData, "homeManifestoImageUrl"),
+    homeManifestoImageUrl: images.homeManifestoImageUrl,
     homeManifestoImageAlt: text(formData, "homeManifestoImageAlt"),
-    teamHeaderImageUrl: text(formData, "teamHeaderImageUrl"),
+    teamHeaderImageUrl: images.teamHeaderImageUrl,
     teamHeaderImageAlt: text(formData, "teamHeaderImageAlt"),
-    matchesHeaderImageUrl: text(formData, "matchesHeaderImageUrl"),
+    matchesHeaderImageUrl: images.matchesHeaderImageUrl,
     matchesHeaderImageAlt: text(formData, "matchesHeaderImageAlt"),
-    standingsHeaderImageUrl: text(formData, "standingsHeaderImageUrl"),
+    standingsHeaderImageUrl: images.standingsHeaderImageUrl,
     standingsHeaderImageAlt: text(formData, "standingsHeaderImageAlt"),
-    clubHeaderImageUrl: text(formData, "clubHeaderImageUrl"),
+    clubHeaderImageUrl: images.clubHeaderImageUrl,
     clubHeaderImageAlt: text(formData, "clubHeaderImageAlt"),
-    mediaHeaderImageUrl: text(formData, "mediaHeaderImageUrl"),
+    mediaHeaderImageUrl: images.mediaHeaderImageUrl,
     mediaHeaderImageAlt: text(formData, "mediaHeaderImageAlt"),
-    mediaSocialImageUrl: text(formData, "mediaSocialImageUrl"),
+    mediaSocialImageUrl: images.mediaSocialImageUrl,
     mediaSocialImageAlt: text(formData, "mediaSocialImageAlt"),
-    mediaFallbackImageUrl: text(formData, "mediaFallbackImageUrl"),
+    mediaFallbackImageUrl: images.mediaFallbackImageUrl,
   };
   const parsed = siteContentSchema.safeParse(raw);
   if (!parsed.success) redirect("/admin/contenu?error=validation");
@@ -235,6 +259,7 @@ const playerSchema = z.object({
 
 export async function savePlayerAction(formData: FormData) {
   const admin = await requireAdmin();
+  const images = await uploadedImages(formData, ["imageUrl"] as const, admin.id, collectionRoutes.player);
   const parsed = playerSchema.safeParse({
     id: numberOr(formData, "id", generatedNumericId()),
     name: text(formData, "name"),
@@ -246,7 +271,7 @@ export async function savePlayerAction(formData: FormData) {
     foot: text(formData, "foot"),
     nationality: text(formData, "nationality") || "Maroc",
     countryCode: text(formData, "countryCode"),
-    imageUrl: text(formData, "imageUrl"),
+    imageUrl: images.imageUrl,
     appearances: numberOrNull(formData, "appearances"),
     goals: numberOrNull(formData, "goals"),
     assists: numberOrNull(formData, "assists"),
@@ -278,12 +303,13 @@ const staffSchema = z.object({
 
 export async function saveStaffAction(formData: FormData) {
   const admin = await requireAdmin();
+  const images = await uploadedImages(formData, ["imageUrl"] as const, admin.id, collectionRoutes.staff);
   const parsed = staffSchema.safeParse({
     id: numberOr(formData, "id", generatedNumericId()),
     name: text(formData, "name"),
     role: text(formData, "role"),
     department: text(formData, "department"),
-    imageUrl: text(formData, "imageUrl"),
+    imageUrl: images.imageUrl,
   });
   if (!parsed.success) redirect(`${collectionRoutes.staff}?error=validation`);
 
@@ -313,13 +339,14 @@ const newsSchema = z.object({
 
 export async function saveNewsAction(formData: FormData) {
   const admin = await requireAdmin();
+  const images = await uploadedImages(formData, ["imageUrl"] as const, admin.id, collectionRoutes.news);
   const dateValue = text(formData, "dateTime");
   const parsed = newsSchema.safeParse({
     id: numberOr(formData, "id", generatedNumericId()),
     title: text(formData, "title"),
     summary: text(formData, "summary"),
     url: text(formData, "url"),
-    imageUrl: text(formData, "imageUrl"),
+    imageUrl: images.imageUrl,
     imageAlt: text(formData, "imageAlt"),
     timestamp: dateValue ? Math.floor(Date.parse(`${dateValue}Z`) / 1000) : null,
   });
@@ -349,13 +376,14 @@ const mediaSchema = z.object({
 
 export async function saveMediaAction(formData: FormData) {
   const admin = await requireAdmin();
+  const images = await uploadedImages(formData, ["thumbnailUrl"] as const, admin.id, collectionRoutes.media);
   const dateValue = text(formData, "dateTime");
   const key = recordKey(formData);
   const parsed = mediaSchema.safeParse({
     id: text(formData, "id") || key,
     title: text(formData, "title"),
     url: text(formData, "url"),
-    thumbnailUrl: text(formData, "thumbnailUrl"),
+    thumbnailUrl: images.thumbnailUrl,
     timestamp: dateValue ? Math.floor(Date.parse(`${dateValue}Z`) / 1000) : null,
   });
   if (!parsed.success) redirect(`${collectionRoutes.media}?error=validation`);

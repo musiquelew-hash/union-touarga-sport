@@ -43,6 +43,20 @@ ON DUPLICATE KEY UPDATE
 
 INSERT IGNORE INTO schema_migrations (migration_key) VALUES ('005_sql_super_admin');
 
+CREATE TABLE IF NOT EXISTS media_assets (
+  asset_id CHAR(36) NOT NULL,
+  file_name VARCHAR(255) NOT NULL,
+  mime_type VARCHAR(100) NOT NULL,
+  byte_size INT UNSIGNED NOT NULL,
+  image_data MEDIUMBLOB NOT NULL,
+  created_by_admin_id BIGINT UNSIGNED NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (asset_id),
+  KEY media_assets_created_at (created_at),
+  CONSTRAINT media_assets_created_by_fk
+    FOREIGN KEY (created_by_admin_id) REFERENCES admin_users (id) ON DELETE SET NULL
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
 CREATE TABLE IF NOT EXISTS content_imports (
   import_key VARCHAR(100) NOT NULL,
   status ENUM('running', 'completed', 'failed') NOT NULL,

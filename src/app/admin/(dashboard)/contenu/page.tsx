@@ -1,5 +1,6 @@
 import { Save } from "lucide-react";
 import { saveSiteContentAction } from "@/app/admin/actions";
+import { AdminImageField } from "@/components/admin/admin-image-field";
 import { AdminNotice } from "@/components/admin/admin-notice";
 import { getSiteContent } from "@/lib/site-content";
 
@@ -61,29 +62,29 @@ export default async function AdminContentPage({
         <section className="admin-panel">
           <div className="admin-panel__heading">
             <div><span>03</span><h2>Images du site</h2></div>
-            <p>Utilisez un chemin local commençant par / ou une URL HTTPS.</p>
+            <p>Prévisualisez l’image actuelle, indiquez une URL ou importez un nouveau fichier.</p>
           </div>
           <div className="admin-form-grid">
-            <InputField label="Écusson couleur" name="crestColorUrl" value={content.crestColorUrl} />
-            <InputField label="Écusson blanc" name="crestWhiteUrl" value={content.crestWhiteUrl} />
-            <InputField label="Fond de connexion" name="adminLoginImageUrl" value={content.adminLoginImageUrl} />
-            <InputField label="Hero de l’accueil" name="homeHeroImageUrl" value={content.homeHeroImageUrl} />
+            <AdminImageField label="Écusson couleur" name="crestColorUrl" value={content.crestColorUrl} required />
+            <AdminImageField label="Écusson blanc" name="crestWhiteUrl" value={content.crestWhiteUrl} required />
+            <AdminImageField label="Fond de connexion" name="adminLoginImageUrl" value={content.adminLoginImageUrl} required />
+            <AdminImageField label="Hero de l’accueil" name="homeHeroImageUrl" value={content.homeHeroImageUrl} required />
             <InputField label="Texte alternatif du hero" name="homeHeroImageAlt" value={content.homeHeroImageAlt} />
-            <InputField label="Image du manifeste" name="homeManifestoImageUrl" value={content.homeManifestoImageUrl} />
+            <AdminImageField label="Image du manifeste" name="homeManifestoImageUrl" value={content.homeManifestoImageUrl} required />
             <InputField label="Texte alternatif du manifeste" name="homeManifestoImageAlt" value={content.homeManifestoImageAlt} />
-            <InputField label="Bannière Équipe" name="teamHeaderImageUrl" value={content.teamHeaderImageUrl} />
+            <AdminImageField label="Bannière Équipe" name="teamHeaderImageUrl" value={content.teamHeaderImageUrl} required />
             <InputField label="Texte alternatif Équipe" name="teamHeaderImageAlt" value={content.teamHeaderImageAlt} />
-            <InputField label="Bannière Matchs" name="matchesHeaderImageUrl" value={content.matchesHeaderImageUrl} />
+            <AdminImageField label="Bannière Matchs" name="matchesHeaderImageUrl" value={content.matchesHeaderImageUrl} required />
             <InputField label="Texte alternatif Matchs" name="matchesHeaderImageAlt" value={content.matchesHeaderImageAlt} />
-            <InputField label="Bannière Classement" name="standingsHeaderImageUrl" value={content.standingsHeaderImageUrl} />
+            <AdminImageField label="Bannière Classement" name="standingsHeaderImageUrl" value={content.standingsHeaderImageUrl} required />
             <InputField label="Texte alternatif Classement" name="standingsHeaderImageAlt" value={content.standingsHeaderImageAlt} />
-            <InputField label="Bannière Club" name="clubHeaderImageUrl" value={content.clubHeaderImageUrl} />
+            <AdminImageField label="Bannière Club" name="clubHeaderImageUrl" value={content.clubHeaderImageUrl} required />
             <InputField label="Texte alternatif Club" name="clubHeaderImageAlt" value={content.clubHeaderImageAlt} />
-            <InputField label="Bannière Médias" name="mediaHeaderImageUrl" value={content.mediaHeaderImageUrl} />
+            <AdminImageField label="Bannière Médias" name="mediaHeaderImageUrl" value={content.mediaHeaderImageUrl} required />
             <InputField label="Texte alternatif Médias" name="mediaHeaderImageAlt" value={content.mediaHeaderImageAlt} />
-            <InputField label="Image des réseaux sociaux" name="mediaSocialImageUrl" value={content.mediaSocialImageUrl} />
+            <AdminImageField label="Image des réseaux sociaux" name="mediaSocialImageUrl" value={content.mediaSocialImageUrl} required />
             <InputField label="Texte alternatif réseaux sociaux" name="mediaSocialImageAlt" value={content.mediaSocialImageAlt} />
-            <InputField label="Image média de secours" name="mediaFallbackImageUrl" value={content.mediaFallbackImageUrl} />
+            <AdminImageField label="Image média de secours" name="mediaFallbackImageUrl" value={content.mediaFallbackImageUrl} required />
           </div>
         </section>
 

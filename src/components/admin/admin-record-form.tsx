@@ -7,6 +7,7 @@ import {
   savePlayerAction,
   saveStaffAction,
 } from "@/app/admin/actions";
+import { AdminImageField } from "@/components/admin/admin-image-field";
 import { AdminSubmitButton } from "@/components/admin/admin-submit-button";
 import type { CmsKind, CmsRecord } from "@/lib/relational-cms-db";
 import type {
@@ -113,7 +114,7 @@ function PlayerFields({ data }: { data?: PlayerSummary }) {
       </SelectField>
       <InputField label="Nationalité" name="nationality" value={data?.nationality || "Maroc"} required />
       <InputField label="Code pays" name="countryCode" value={data?.countryCode} placeholder="MA" />
-      <InputField label="URL de la photo" name="imageUrl" value={data?.imageUrl} wide />
+      <AdminImageField label="Photo du joueur" name="imageUrl" value={data?.imageUrl} />
       <InputField label="Apparitions" name="appearances" value={data?.appearances} type="number" />
       <InputField label="Buts" name="goals" value={data?.goals} type="number" />
       <InputField label="Passes décisives" name="assists" value={data?.assists} type="number" />
@@ -134,7 +135,7 @@ function StaffFields({ data }: { data?: StaffSummary }) {
         <option>Direction</option>
         <option>Autre</option>
       </SelectField>
-      <InputField label="URL de la photo" name="imageUrl" value={data?.imageUrl} wide />
+      <AdminImageField label="Photo du membre" name="imageUrl" value={data?.imageUrl} />
     </>
   );
 }
@@ -146,7 +147,7 @@ function NewsFields({ data }: { data?: NewsSummary }) {
       <InputField label="Titre" name="title" value={data?.title} required wide />
       <TextAreaField label="Résumé" name="summary" value={data?.summary} />
       <InputField label="Lien de l’article" name="url" value={data?.url} type="url" required wide />
-      <InputField label="URL de l’image" name="imageUrl" value={data?.imageUrl} wide />
+      <AdminImageField label="Image de l’article" name="imageUrl" value={data?.imageUrl} />
       <InputField label="Texte alternatif" name="imageAlt" value={data?.imageAlt} wide />
       <InputField label="Date et heure (UTC)" name="dateTime" value={utcDateTime(data?.timestamp)} type="datetime-local" />
     </>
@@ -159,7 +160,7 @@ function MediaFields({ data }: { data?: MediaSummary }) {
       {data && <input type="hidden" name="id" value={data.id} />}
       <InputField label="Titre" name="title" value={data?.title} required wide />
       <InputField label="Lien du média" name="url" value={data?.url} type="url" required wide />
-      <InputField label="URL de la miniature" name="thumbnailUrl" value={data?.thumbnailUrl} wide />
+      <AdminImageField label="Miniature du média" name="thumbnailUrl" value={data?.thumbnailUrl} />
       <InputField label="Date et heure (UTC)" name="dateTime" value={utcDateTime(data?.timestamp)} type="datetime-local" />
     </>
   );
