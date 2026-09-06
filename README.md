@@ -30,12 +30,30 @@ npm run lint
 npm run build
 ```
 
+Pour tester la version de production sur le port utilisé par Railway :
+
+```powershell
+$env:PORT=8080
+npm run start
+```
+
+Le serveur écoute alors sur [http://localhost:8080](http://localhost:8080).
+
 ## Déploiement sur Railway
 
 1. Créer un nouveau projet dans Railway.
 2. Choisir **Deploy from GitHub repo**.
 3. Sélectionner ce dépôt.
 4. Laisser Railway détecter automatiquement l'application Next.js.
+
+Si le dépôt n'apparaît pas dans Railway :
+
+1. Ouvrir la page [Install Railway App](https://github.com/apps/railway-app/installations/new) sur GitHub.
+2. Sélectionner le compte `musiquelew-hash`.
+3. Autoriser tous les dépôts ou ajouter explicitement `union-touarga-sport` aux dépôts sélectionnés.
+4. Revenir dans Railway puis choisir **Add > GitHub Repository > Refresh**.
+
+Le fichier `railway.json` configure explicitement Railpack, la commande de build, la commande de démarrage et le healthcheck HTTP.
 
 Les commandes déjà définies dans `package.json` sont :
 
