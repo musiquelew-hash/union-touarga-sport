@@ -135,7 +135,7 @@ function StaffFields({ data }: { data?: StaffSummary }) {
         <option>Direction</option>
         <option>Autre</option>
       </SelectField>
-      <AdminImageField label="Photo du membre" name="imageUrl" value={data?.imageUrl} />
+      <AdminImageField label="Photo du membre" name="imageUrl" value={data?.imageUrl} variant="portrait" />
     </>
   );
 }
