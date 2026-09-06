@@ -19,6 +19,7 @@ export function AdminImageField({
 }) {
   const [preview, setPreview] = useState(value || "");
   const [objectUrl, setObjectUrl] = useState<string | null>(null);
+  const [fileName, setFileName] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => () => {
@@ -32,12 +33,14 @@ export function AdminImageField({
     const nextObjectUrl = URL.createObjectURL(file);
     setObjectUrl(nextObjectUrl);
     setPreview(nextObjectUrl);
+    setFileName(file.name);
   }
 
   function updateUrl(event: ChangeEvent<HTMLInputElement>) {
     if (objectUrl) URL.revokeObjectURL(objectUrl);
     setObjectUrl(null);
     setPreview(event.target.value.trim());
+    setFileName("");
     if (fileInputRef.current) fileInputRef.current.value = "";
   }
 
@@ -59,7 +62,6 @@ export function AdminImageField({
             <input name={name} defaultValue={value || ""} onChange={updateUrl} required={required} />
           </label>
           <label className="admin-image-field__upload">
-            <span><ImagePlus aria-hidden="true" size={16} /> Importer une nouvelle image</span>
             <input
               accept="image/jpeg,image/png,image/webp,image/gif"
               name={`${name}Upload`}
@@ -67,7 +69,11 @@ export function AdminImageField({
               ref={fileInputRef}
               type="file"
             />
-            <small>JPG, PNG, WebP ou GIF · 8 Mo maximum</small>
+            <span className="admin-image-field__upload-button">
+              <ImagePlus aria-hidden="true" size={16} />
+              {preview ? "Remplacer l’image" : "Importer une image"}
+            </span>
+            <small>{fileName || "JPG, PNG, WebP ou GIF · 8 Mo maximum"}</small>
           </label>
         </div>
       </div>
