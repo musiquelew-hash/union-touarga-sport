@@ -36,6 +36,11 @@ export default async function AdminLoginPage({
               Identifiant ou mot de passe incorrect.
             </div>
           )}
+          {params.error === "unavailable" && (
+            <div className="admin-notice admin-notice--error" role="alert">
+              Connexion temporairement indisponible. Veuillez réessayer dans quelques instants.
+            </div>
+          )}
           {params.passwordChanged && (
             <div className="admin-notice admin-notice--success" role="status">
               Mot de passe modifié. Reconnectez-vous avec le nouveau mot de passe.

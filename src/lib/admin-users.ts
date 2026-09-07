@@ -150,8 +150,18 @@ export async function authenticateAdmin(username: string, password: string) {
   const row = rows[0];
   if (!row || !(await compare(password, row.password_hash))) return null;
 
-  await pool.execute("UPDATE admin_users SET last_login_at = UTC_TIMESTAMP() WHERE id = ?", [row.id]);
-  await writeAuditLog(Number(row.id), Number(row.id), "login");
+  try {
+    await pool.execute("UPDATE admin_users SET last_login_at = UTC_TIMESTAMP() WHERE id = ?", [row.id]);
+  } catch (error) {
+    console.error("[ADMIN AUTH] Mise à jour de la dernière connexion impossible", error);
+  }
+
+  try {
+    await writeAuditLog(Number(row.id), Number(row.id), "login");
+  } catch (error) {
+    console.error("[ADMIN AUTH] Écriture de l'audit de connexion impossible", error);
+  }
+
   return mapAdminUser({ ...row, last_login_at: new Date() });
 }
 

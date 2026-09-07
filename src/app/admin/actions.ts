@@ -25,6 +25,7 @@ import {
   changeAdminPassword,
   createAdminUser,
   deleteAdminUser,
+  type AdminUser,
   updateAdminUser,
 } from "@/lib/admin-users";
 import { runInitialContentImport } from "@/lib/initial-content-import";
@@ -122,12 +123,25 @@ export async function loginAction(formData: FormData) {
     .safeParse({ username: text(formData, "username"), password: text(formData, "password") });
 
   if (!credentials.success) redirect("/admin/login?error=credentials");
-  const admin = await verifyAdminCredentials(credentials.data.username, credentials.data.password);
+  let admin: AdminUser | null = null;
+  try {
+    admin = await verifyAdminCredentials(credentials.data.username, credentials.data.password);
+  } catch (error) {
+    console.error("[ADMIN AUTH] Vérification des identifiants impossible", error);
+    redirect("/admin/login?error=unavailable");
+  }
+
   if (!admin) {
     redirect("/admin/login?error=credentials");
   }
 
-  await createAdminSession(admin);
+  try {
+    await createAdminSession(admin);
+  } catch (error) {
+    console.error("[ADMIN AUTH] Création de la session impossible", error);
+    redirect("/admin/login?error=unavailable");
+  }
+
   redirect("/admin");
 }
 
