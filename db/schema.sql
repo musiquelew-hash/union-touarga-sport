@@ -489,8 +489,7 @@ CREATE TABLE IF NOT EXISTS academy_player_notes (
   CONSTRAINT academy_player_notes_account_fk
     FOREIGN KEY (author_account_id) REFERENCES academy_accounts (account_id) ON DELETE SET NULL,
   CONSTRAINT academy_player_notes_admin_fk
-    FOREIGN KEY (author_admin_id) REFERENCES admin_users (id) ON DELETE SET NULL,
-  CONSTRAINT academy_player_notes_author CHECK (author_account_id IS NOT NULL OR author_admin_id IS NOT NULL)
+    FOREIGN KEY (author_admin_id) REFERENCES admin_users (id) ON DELETE SET NULL
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 INSERT IGNORE INTO schema_migrations (migration_key) VALUES ('006_academy_lifecycle');
