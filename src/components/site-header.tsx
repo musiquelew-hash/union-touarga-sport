@@ -41,6 +41,9 @@ export function SiteHeader({
       <header className="site-header">
         <div className="shell site-header__inner">
           <Brand compact crestOnly crestUrl={crestUrl} />
+          <Link className="desktop-more-button" href="/equipes" aria-label="Voir toutes les équipes">
+            <Menu aria-hidden="true" size={17} />
+          </Link>
           <nav className="desktop-nav" aria-label="Navigation principale">
             {navigation.slice(0, 2).map((item) => (
               <Link

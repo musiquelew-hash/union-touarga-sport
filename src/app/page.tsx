@@ -2,10 +2,11 @@ import { ArrowRight, ArrowUpRight, Shield } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { MatchCard } from "@/components/match-card";
+import { HomeStoryCarousel, type HomeStory } from "@/components/home-story-carousel";
 import { NewsCard } from "@/components/news-card";
 import { PlayerCard } from "@/components/player-card";
 import { StandingsTable } from "@/components/standings-table";
-import { formatShortDate, formatTime } from "@/lib/format";
+import { TeamSwitcher } from "@/components/team-switcher";
 import { getSiteContent } from "@/lib/site-content";
 import { listClubTeams } from "@/lib/sports-hub";
 import { getUtsData, UTS_TEAM_ID } from "@/lib/uts-data";
@@ -38,75 +39,20 @@ export default async function Home() {
   const standings = getHomeStandings(data.standings);
   const featuredPlayers = getFeaturedPlayers(data.players);
   const leadStory = data.news[0];
+  const stories: HomeStory[] = data.news.slice(0, 5).map((article) => ({
+    id: String(article.id),
+    eyebrow: "Actualité UTS",
+    title: article.title,
+    summary: article.summary || "Toute l’actualité officielle de l’Union Touarga Sport.",
+    imageUrl: article.imageUrl || content.homeHeroImageUrl,
+    imageAlt: article.imageAlt || article.title,
+    href: article.url,
+  }));
+  if (!stories.length) stories.push({ id: "club", eyebrow: content.heroKicker, title: `${content.heroTitleTop} ${content.heroTitleBottom}`, summary: `${content.heroLeadStrong} ${content.heroLead}`, imageUrl: content.homeHeroImageUrl, imageAlt: content.homeHeroImageAlt, href: "/club" });
 
   return (
     <>
-      <section className="home-hero">
-        <Image
-          className="home-hero__image"
-          src={leadStory?.imageUrl || content.homeHeroImageUrl}
-          alt={leadStory?.imageAlt || content.homeHeroImageAlt}
-          fill
-          loading="eager"
-          sizes="100vw"
-        />
-        <div className="shell home-hero__inner">
-          <div className="home-hero__content">
-            <div className="home-hero__meta">
-              <span>Le média officiel de l’Union Touarga Sport</span>
-            </div>
-            <p className="home-hero__kicker">{leadStory ? "À la une" : content.heroKicker}</p>
-            <h1>
-              {leadStory?.title || content.heroTitleTop}
-              {!leadStory && <span>{content.heroTitleBottom}</span>}
-            </h1>
-            <p className="home-hero__lead">
-              {leadStory ? leadStory.summary : <><strong>{content.heroLeadStrong}</strong> {content.heroLead}</>}
-            </p>
-            <div className="home-hero__actions">
-              {leadStory ? <a className="button button--yellow" href={leadStory.url} target="_blank" rel="noreferrer">Lire l’actualité <ArrowUpRight aria-hidden="true" size={18} /></a> : <Link className="button button--yellow" href="/matchs">Voir les matchs <ArrowRight aria-hidden="true" size={18} /></Link>}
-              <Link className="button button--outline" href="/equipes">Toutes nos équipes <ArrowRight aria-hidden="true" size={18} /></Link>
-            </div>
-          </div>
-          {nextMatch && (
-            <aside className="home-hero__match">
-              <div className="hero-fixture">
-              <div className="hero-fixture__label">
-                <strong>Prochain match</strong>
-                <small>{nextMatch.competition} · J{nextMatch.round || "–"}</small>
-              </div>
-              <div className="hero-fixture__teams">
-                <div className="hero-fixture__team">
-                  {nextMatch.home.imageUrl ? (
-                    <Image src={nextMatch.home.imageUrl} alt="" width={52} height={52} />
-                  ) : (
-                    <span className="hero-fixture__monogram" aria-hidden="true">{nextMatch.home.code}</span>
-                  )}
-                  <strong>{nextMatch.home.shortName}</strong>
-                </div>
-                <span className="hero-fixture__versus">VS</span>
-                <div className="hero-fixture__team">
-                  {nextMatch.away.imageUrl ? (
-                    <Image src={nextMatch.away.imageUrl} alt="" width={52} height={52} />
-                  ) : (
-                    <span className="hero-fixture__monogram" aria-hidden="true">{nextMatch.away.code}</span>
-                  )}
-                  <strong>{nextMatch.away.shortName}</strong>
-                </div>
-              </div>
-              <div className="hero-fixture__date">
-                <strong>{formatShortDate(nextMatch.timestamp)}</strong>
-                <small>{formatTime(nextMatch.timestamp)} · Rabat</small>
-              </div>
-              </div>
-              <Link className="hero-fixture__link" href="/matchs">
-                Fiche du match <ArrowUpRight aria-hidden="true" size={16} />
-              </Link>
-            </aside>
-          )}
-        </div>
-        <span className="home-hero__monogram" aria-hidden="true">UTS</span>
-      </section>
+      <HomeStoryCarousel stories={stories} />
 
       <div className="identity-ticker" aria-hidden="true">
         <div className="identity-ticker__track">
@@ -141,10 +87,11 @@ export default async function Home() {
           <div className="section-heading">
             <div>
               <span className="eyebrow">01 · Centre du match</span>
-              <h2>Le prochain rendez-vous</h2>
+              <h2>Matchs</h2>
             </div>
-            <p>Calendrier et résultats sont synchronisés automatiquement pour suivre l’équipe sans attendre.</p>
+            <Link className="button button--dark" href="/matchs">Tous les matchs <ArrowRight size={17} /></Link>
           </div>
+          <TeamSwitcher teams={teams} activeSlug={teams.find((team) => team.primary)?.slug || teams[0]?.slug || "masculine"} route="/matchs" query />
           <div className="home-scoreboard">
             {nextMatch && <MatchCard match={nextMatch} label="À venir" featured />}
             {data.lastMatch && <MatchCard match={data.lastMatch} label="Dernier résultat" />}
