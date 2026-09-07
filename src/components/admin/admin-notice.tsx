@@ -5,7 +5,11 @@ export function AdminNotice({ saved, error }: { saved?: string; error?: string }
     return (
       <div className="admin-notice admin-notice--success" role="status">
         <CheckCircle2 aria-hidden="true" size={18} />
-        {saved === "imported" ? "Le remplissage initial du site est terminé." : "Les modifications sont publiées."}
+        {saved === "imported"
+          ? "Le remplissage initial du site est terminé."
+          : saved === "synchronized"
+            ? "Les contenus manquants et les données sportives sont synchronisés."
+            : "Les modifications sont publiées."}
       </div>
     );
   }
@@ -23,6 +27,8 @@ export function AdminNotice({ saved, error }: { saved?: string; error?: string }
       "import-completed": "Le remplissage initial a déjà été effectué et ne peut pas être relancé.",
       "import-running": "Le remplissage initial est déjà en cours.",
       "initial-import": "Le remplissage initial a échoué. Vous pouvez le relancer sans perdre les données existantes.",
+      "temporary-sync": "La restauration des contenus officiels a échoué. Réessayez dans quelques instants.",
+      "sync-partial": "Les contenus ont été restaurés, mais au moins une source sportive n’a pas répondu.",
       "image-upload": "L’image n’a pas pu être importée. Utilisez un fichier JPG, PNG, WebP ou GIF de 8 Mo maximum.",
       capacity: "Ce groupe a atteint sa capacité maximale.",
       "invalid-group": "Le groupe ou la catégorie sélectionnée n’est pas valide.",

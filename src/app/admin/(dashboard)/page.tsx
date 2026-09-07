@@ -1,6 +1,6 @@
 import { ArrowRight, GraduationCap, LayoutGrid, RefreshCw, Trophy } from "lucide-react";
 import Link from "next/link";
-import { runInitialContentImportAction } from "@/app/admin/actions";
+import { runInitialContentImportAction, temporarySyncSiteDataAction } from "@/app/admin/actions";
 import { AdminNotice } from "@/components/admin/admin-notice";
 import { AdminSubmitButton } from "@/components/admin/admin-submit-button";
 import { requireAdmin } from "@/lib/admin-auth";
@@ -38,18 +38,32 @@ export default async function AdminDashboardPage({
           <h1>Vue d’ensemble</h1>
           <p>Gérez les contenus du club, les publications et les données sportives depuis un espace unique.</p>
         </div>
-        {canImport && (
-          <form action={runInitialContentImportAction}>
-            <AdminSubmitButton
-              className="admin-button admin-button--primary"
-              confirmMessage="Cet import initial ne pourra être exécuté qu’une seule fois. Continuer ?"
-              disabled={!databaseConfigured || importStatus === "running"}
-              pendingLabel="Import en cours…"
-            >
-              <RefreshCw aria-hidden="true" size={17} /> Remplir le site une première fois
-            </AdminSubmitButton>
-          </form>
-        )}
+        <div className="admin-heading-actions">
+          {canImport && (
+            <form action={runInitialContentImportAction}>
+              <AdminSubmitButton
+                className="admin-button admin-button--primary"
+                confirmMessage="Cet import initial ne pourra être exécuté qu’une seule fois. Continuer ?"
+                disabled={!databaseConfigured || importStatus === "running"}
+                pendingLabel="Import en cours…"
+              >
+                <RefreshCw aria-hidden="true" size={17} /> Remplir le site une première fois
+              </AdminSubmitButton>
+            </form>
+          )}
+          {session.role === "super_admin" && (
+            <form action={temporarySyncSiteDataAction}>
+              <AdminSubmitButton
+                className="admin-button admin-button--secondary"
+                confirmMessage="Restaurer les contenus officiels absents et synchroniser toutes les équipes configurées ? Les corrections existantes seront conservées."
+                disabled={!databaseConfigured}
+                pendingLabel="Synchronisation en cours…"
+              >
+                <RefreshCw aria-hidden="true" size={17} /> Synchroniser les données
+              </AdminSubmitButton>
+            </form>
+          )}
+        </div>
       </header>
 
       <AdminNotice saved={params.saved} error={params.error} />

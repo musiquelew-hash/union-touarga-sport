@@ -1,4 +1,10 @@
-import { cmsKinds, replaceCmsCategory, type CmsKind } from "@/lib/relational-cms-db";
+import {
+  cmsKinds,
+  getCmsCategory,
+  insertMissingOfficialCmsRecords,
+  replaceCmsCategory,
+  type CmsKind,
+} from "@/lib/relational-cms-db";
 import { getOfficialCmsSeedData, type OfficialCmsSeedData } from "@/lib/official-cms-source";
 import initialImageManifest from "@/data/initial-image-manifest.json";
 
@@ -63,9 +69,25 @@ export async function replaceAllOfficialCmsData() {
   const counts = Object.fromEntries(cmsKinds.map((kind) => [kind, 0])) as Record<CmsKind, number>;
 
   for (const kind of cmsKinds) {
-    const records = officialRecordsForKind(kind, data);
+    const records: { key: string; data: unknown; sortOrder: number }[] = officialRecordsForKind(kind, data);
     await replaceCmsCategory<unknown>(kind, records);
     counts[kind] = records.length;
+  }
+
+  return counts;
+}
+
+export async function restoreMissingOfficialCmsData() {
+  const data = await fetchOfficialCmsSeedData();
+  const counts = Object.fromEntries(cmsKinds.map((kind) => [kind, 0])) as Record<CmsKind, number>;
+
+  for (const kind of cmsKinds) {
+    const records: { key: string; data: unknown; sortOrder: number }[] = officialRecordsForKind(kind, data);
+    const existing = await getCmsCategory<unknown>(kind, true);
+    const existingKeys = new Set(existing.records.map((record) => record.key));
+    const missing = records.filter((record) => !existingKeys.has(record.key));
+    await insertMissingOfficialCmsRecords(kind, missing);
+    counts[kind] = missing.length;
   }
 
   return counts;

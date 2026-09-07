@@ -30,10 +30,12 @@ import {
 } from "@/lib/admin-users";
 import { runInitialContentImport } from "@/lib/initial-content-import";
 import { ImageUploadError, resolveImageField } from "@/lib/media-assets";
+import { restoreMissingOfficialCmsData } from "@/lib/official-cms-sync";
 import { updateAcademyRegistrationSettings, type AcademyRegistrationSettings } from "@/lib/academy";
 import { defaultSiteContent, type SiteContent } from "@/lib/site-content";
 import {
   deleteSportsRecord,
+  listClubTeams,
   saveClubTeam,
   saveSportsMatch,
   saveSportsStanding,
@@ -290,6 +292,28 @@ export async function syncSportsTeamAction(formData: FormData) {
   const teamId = numberOrNull(formData, "teamId");
   if (!teamId) redirect("/admin/sport?error=validation");
   return persist(() => syncClubTeam(teamId).then(() => undefined), `/admin/sport?team=${teamId}`);
+}
+
+export async function temporarySyncSiteDataAction() {
+  await requireSuperAdmin();
+
+  try {
+    await restoreMissingOfficialCmsData();
+  } catch (error) {
+    console.error("[ADMIN] Restauration éditoriale impossible", error);
+    redirect("/admin?error=temporary-sync");
+  }
+
+  const teams = (await listClubTeams(true)).filter((team) => team.apiProvider !== "manual");
+  const results = await Promise.allSettled(teams.map((team) => syncClubTeam(team.id)));
+  const failures = results.filter((result) => result.status === "rejected");
+  publicPaths();
+
+  if (failures.length > 0) {
+    console.error("[ADMIN] Synchronisation sportive partielle", failures.map((failure) => failure.reason));
+    redirect("/admin?error=sync-partial");
+  }
+  redirect("/admin?saved=synchronized");
 }
 
 export async function loginAction(formData: FormData) {

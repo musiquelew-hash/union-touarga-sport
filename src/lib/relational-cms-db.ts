@@ -669,6 +669,34 @@ export async function replaceCmsCategory<T>(kind: CmsKind, records: { key: strin
   }
 }
 
+export async function insertMissingOfficialCmsRecords<T>(
+  kind: CmsKind,
+  records: { key: string; data: T; sortOrder: number }[],
+) {
+  if (records.length === 0) return;
+  await ensureCmsSchema();
+  const connection = await getDatabasePool().getConnection();
+
+  try {
+    await connection.beginTransaction();
+    for (const record of records) {
+      await writeCmsRecord(
+        (sql, values) => connection.execute(sql, values),
+        kind,
+        { ...record, published: true },
+        "legacy",
+        null,
+      );
+    }
+    await connection.commit();
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
+}
+
 export async function getCmsSetting<T>(key: string): Promise<T | null> {
   if (key !== "site-content") return null;
   await ensureCmsSchema();
