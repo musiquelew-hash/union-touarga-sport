@@ -19,7 +19,7 @@ function detectedMimeType(bytes: Buffer) {
   return signatures.find((signature) => signature.matches(bytes))?.mimeType;
 }
 
-export async function saveUploadedImage(file: File, adminUserId: number) {
+export async function saveUploadedImage(file: File, adminUserId: number | null) {
   if (file.size <= 0 || file.size > MAX_IMAGE_BYTES) {
     throw new ImageUploadError("L’image doit peser moins de 8 Mo.");
   }
@@ -45,6 +45,13 @@ export async function resolveImageField(formData: FormData, fieldName: string, a
   const upload = formData.get(`${fieldName}Upload`);
   if (upload instanceof File && upload.size > 0) return saveUploadedImage(upload, adminUserId);
   return String(formData.get(fieldName) || "").trim();
+}
+
+export async function deleteUploadedImage(imageUrl: string) {
+  const assetId = imageUrl.match(/^\/api\/media-assets\/([0-9a-f-]{36})$/i)?.[1];
+  if (!assetId) return;
+  await ensureDatabaseSchema();
+  await getDatabasePool().execute("DELETE FROM media_assets WHERE asset_id = ?", [assetId]);
 }
 
 type MediaAssetRow = RowDataPacket & {

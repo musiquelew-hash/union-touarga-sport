@@ -4405,3 +4405,730 @@ img {
     transform: translateX(0);
   }
 }
+
+/* Academy */
+.academy-shell {
+  --academy-ink: #102019;
+  --academy-green: #176b49;
+  --academy-yellow: #f5c518;
+  color: var(--academy-ink);
+  margin-inline: auto;
+  max-width: 1180px;
+  padding: 64px 24px 96px;
+}
+
+.academy-eyebrow {
+  color: var(--academy-green);
+  font-size: 12px;
+  font-weight: 800;
+  margin: 0 0 8px;
+  text-transform: uppercase;
+}
+
+.academy-shell h1,
+.academy-shell h2,
+.academy-shell h3 {
+  font-family: var(--font-display), sans-serif;
+  letter-spacing: 0;
+}
+
+.academy-shell h1 {
+  font-size: clamp(42px, 7vw, 82px);
+  line-height: 0.92;
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.academy-age-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 24px;
+}
+
+.academy-age-strip span {
+  background: var(--academy-ink);
+  color: #fff;
+  font-family: var(--font-display), sans-serif;
+  font-size: 13px;
+  font-weight: 800;
+  padding: 5px 8px;
+}
+
+.academy-registration-page {
+  max-width: 980px;
+}
+
+.academy-registration-heading {
+  border-bottom: 4px solid var(--academy-yellow);
+  margin-bottom: 28px;
+  padding-bottom: 28px;
+}
+
+.academy-registration-heading > p:not(.academy-eyebrow),
+.academy-auth-intro > p,
+.academy-workspace-header > div > p:last-child {
+  color: #58635d;
+  line-height: 1.65;
+  max-width: 680px;
+}
+
+.academy-registration-form,
+.academy-form,
+.academy-form-section,
+.academy-form-section label {
+  display: grid;
+}
+
+.academy-registration-form {
+  gap: 22px;
+}
+
+.academy-form-section,
+.academy-consent-panel,
+.academy-section,
+.academy-auth-form {
+  background: #fff;
+  border: 1px solid #d8ded9;
+  box-shadow: 0 12px 40px rgba(16, 32, 25, 0.07);
+  padding: 26px;
+}
+
+.academy-form-section__heading,
+.academy-section-heading,
+.academy-workspace-header,
+.academy-player-card,
+.academy-roster article > header,
+.academy-roster-player,
+.academy-schedule article,
+.academy-trust-row,
+.academy-notice {
+  align-items: center;
+  display: flex;
+}
+
+.academy-form-section__heading {
+  gap: 14px;
+  margin-bottom: 22px;
+}
+
+.academy-form-section__heading > span {
+  align-items: center;
+  background: var(--academy-yellow);
+  display: inline-flex;
+  font-family: var(--font-display), sans-serif;
+  font-weight: 900;
+  height: 38px;
+  justify-content: center;
+  width: 38px;
+}
+
+.academy-form-section__heading h2,
+.academy-form-section__heading p,
+.academy-section-heading h2,
+.academy-player-card h3,
+.academy-roster h3,
+.academy-schedule h3 {
+  margin: 0;
+}
+
+.academy-form-section__heading p {
+  color: #68736d;
+  font-size: 13px;
+  margin-top: 3px;
+}
+
+.academy-form-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.academy-form,
+.academy-form-section label {
+  gap: 7px;
+}
+
+.academy-form {
+  gap: 15px;
+}
+
+.academy-form label,
+.academy-form-grid label {
+  display: grid;
+  gap: 7px;
+}
+
+.academy-form label > span,
+.academy-form-grid label > span {
+  color: #47534c;
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.academy-form input,
+.academy-form select,
+.academy-form textarea,
+.academy-form-grid input,
+.academy-form-grid select,
+.academy-form-grid textarea {
+  background: #f8faf8;
+  border: 1px solid #cbd4ce;
+  border-radius: 3px;
+  color: var(--academy-ink);
+  min-height: 46px;
+  min-width: 0;
+  padding: 10px 12px;
+  width: 100%;
+}
+
+.academy-form textarea,
+.academy-form-grid textarea {
+  line-height: 1.5;
+  resize: vertical;
+}
+
+.academy-form input:focus,
+.academy-form select:focus,
+.academy-form textarea:focus,
+.academy-form-grid input:focus,
+.academy-form-grid select:focus,
+.academy-form-grid textarea:focus {
+  border-color: var(--academy-green);
+  outline: 3px solid rgba(23, 107, 73, 0.12);
+}
+
+.academy-form-grid .is-wide {
+  grid-column: 1 / -1;
+}
+
+.academy-consent-panel {
+  align-items: start;
+  display: grid;
+  gap: 18px;
+  grid-template-columns: auto minmax(0, 1fr);
+}
+
+.academy-consent-panel > svg {
+  color: var(--academy-green);
+}
+
+.academy-check {
+  align-items: start;
+  display: flex;
+  gap: 10px;
+  line-height: 1.5;
+  margin-bottom: 12px;
+}
+
+.academy-check input {
+  accent-color: var(--academy-green);
+  flex: 0 0 auto;
+  height: 18px;
+  margin-top: 2px;
+  width: 18px;
+}
+
+.academy-button {
+  align-items: center;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 12px;
+  font-weight: 800;
+  gap: 8px;
+  justify-content: center;
+  min-height: 44px;
+  padding: 10px 16px;
+  text-transform: uppercase;
+}
+
+.academy-button--primary {
+  background: var(--academy-green);
+  color: #fff;
+}
+
+.academy-button--ghost {
+  background: #fff;
+  border-color: #cbd4ce;
+  color: var(--academy-ink);
+}
+
+.academy-submit {
+  justify-self: end;
+}
+
+.academy-trust-row {
+  color: #5d6962;
+  flex-wrap: wrap;
+  font-size: 12px;
+  gap: 20px;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+.academy-trust-row span {
+  align-items: center;
+  display: flex;
+  gap: 6px;
+}
+
+.academy-trust-row a,
+.academy-auth-link a {
+  color: var(--academy-green);
+  font-weight: 800;
+}
+
+.academy-auth-page {
+  align-items: stretch;
+  display: grid;
+  gap: 0;
+  grid-template-columns: minmax(0, 1.15fr) minmax(360px, 0.85fr);
+  min-height: 680px;
+}
+
+.academy-auth-intro {
+  background: var(--academy-yellow);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 48px;
+}
+
+.academy-auth-form {
+  align-content: center;
+  box-shadow: none;
+  display: grid;
+  gap: 18px;
+  padding: 48px;
+}
+
+.academy-auth-form > svg {
+  color: var(--academy-green);
+}
+
+.academy-auth-form h2 {
+  font-size: 34px;
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.academy-auth-link {
+  color: #68736d;
+  font-size: 13px;
+  margin: 0;
+}
+
+.academy-notice {
+  border: 1px solid;
+  gap: 9px;
+  margin-bottom: 20px;
+  padding: 13px 15px;
+}
+
+.academy-notice.is-success {
+  background: #edf8f1;
+  border-color: #a8cfb7;
+  color: #155d3f;
+}
+
+.academy-notice.is-error {
+  background: #fff1ef;
+  border-color: #e7aaa2;
+  color: #8a2d23;
+}
+
+.academy-workspace-header {
+  border-bottom: 4px solid var(--academy-yellow);
+  gap: 24px;
+  justify-content: space-between;
+  margin-bottom: 28px;
+  padding-bottom: 24px;
+}
+
+.academy-section {
+  margin-top: 22px;
+}
+
+.academy-section-heading {
+  justify-content: space-between;
+  margin-bottom: 18px;
+}
+
+.academy-section-heading > div {
+  align-items: center;
+  display: flex;
+  gap: 9px;
+}
+
+.academy-section-heading > div > svg {
+  color: var(--academy-green);
+}
+
+.academy-section-heading > span {
+  background: var(--academy-yellow);
+  font-weight: 900;
+  padding: 4px 9px;
+}
+
+.academy-player-grid,
+.academy-roster,
+.academy-feed,
+.academy-schedule {
+  display: grid;
+  gap: 12px;
+}
+
+.academy-player-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.academy-player-card {
+  background: #fff;
+  border: 1px solid #d8ded9;
+  gap: 18px;
+  padding: 16px;
+}
+
+.academy-player-card img,
+.academy-player-photo,
+.academy-roster-player img {
+  background: #e7ece8;
+  object-fit: contain;
+}
+
+.academy-player-card img {
+  aspect-ratio: 4 / 5;
+  height: 120px;
+  width: 96px;
+}
+
+.academy-player-card h3 {
+  font-size: 24px;
+}
+
+.academy-player-card p,
+.academy-player-card small {
+  color: #66716b;
+  display: block;
+  margin: 4px 0 0;
+}
+
+.academy-status {
+  color: var(--academy-green);
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 900;
+  margin-bottom: 5px;
+  text-transform: uppercase;
+}
+
+.academy-coach-grid,
+.academy-admin-grid {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.academy-action-panel {
+  margin-top: 0;
+}
+
+.academy-roster {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.academy-roster article {
+  border: 1px solid #d8ded9;
+  padding: 15px;
+}
+
+.academy-roster article > header {
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.academy-roster article > header > strong {
+  background: var(--academy-yellow);
+  font-family: var(--font-display), sans-serif;
+  font-size: 20px;
+  padding: 8px;
+}
+
+.academy-roster h3 {
+  font-size: 18px;
+}
+
+.academy-roster p,
+.academy-roster small,
+.academy-schedule p,
+.academy-schedule small {
+  color: #68736d;
+  margin: 2px 0 0;
+}
+
+.academy-roster-player {
+  border-top: 1px solid #e3e7e4;
+  gap: 10px;
+  padding-block: 9px;
+}
+
+.academy-roster-player img {
+  height: 52px;
+  width: 42px;
+}
+
+.academy-roster-player span,
+.academy-roster-player small {
+  display: block;
+}
+
+.academy-roster-player__medical {
+  color: #8a5a00 !important;
+  margin-top: 4px;
+}
+
+.academy-schedule article {
+  border-left: 4px solid var(--academy-green);
+  gap: 22px;
+  padding: 15px 18px;
+}
+
+.academy-schedule time {
+  flex: 0 0 180px;
+}
+
+.academy-schedule time strong,
+.academy-schedule time small {
+  display: block;
+}
+
+.academy-schedule small,
+.academy-schedule p {
+  align-items: center;
+  display: flex;
+  gap: 5px;
+}
+
+.academy-feed article {
+  border-bottom: 1px solid #e0e5e1;
+  padding: 4px 0 14px;
+}
+
+.academy-feed article:last-child {
+  border-bottom: 0;
+}
+
+.academy-attendance-list {
+  display: grid;
+  gap: 10px;
+}
+
+.academy-attendance-list details {
+  border: 1px solid #d8ded9;
+}
+
+.academy-attendance-list summary {
+  align-items: center;
+  cursor: pointer;
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+  padding: 14px;
+}
+
+.academy-attendance-list summary span,
+.academy-attendance-list summary small {
+  display: block;
+}
+
+.academy-attendance-list summary > span:last-child {
+  color: var(--academy-green);
+  font-size: 11px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.academy-attendance-form {
+  border-top: 1px solid #d8ded9;
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+}
+
+.academy-attendance-form label {
+  align-items: center;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: minmax(0, 1fr) 150px;
+}
+
+.academy-attendance-form select {
+  background: #f8faf8;
+  border: 1px solid #cbd4ce;
+  min-height: 40px;
+  padding: 8px;
+}
+
+.academy-attendance-pending {
+  border-top: 1px solid #d8ded9;
+  color: #68736d;
+  margin: 0;
+  padding: 14px;
+}
+
+.academy-add-player summary {
+  align-items: center;
+  color: var(--academy-green);
+  cursor: pointer;
+  display: flex;
+  font-weight: 800;
+  gap: 8px;
+}
+
+.academy-add-player[open] summary {
+  border-bottom: 1px solid #e0e5e1;
+  margin-bottom: 20px;
+  padding-bottom: 14px;
+}
+
+.academy-feed p {
+  line-height: 1.55;
+  margin: 6px 0;
+}
+
+.academy-feed small,
+.academy-empty {
+  color: #6a746e;
+}
+
+.academy-enrollment-body {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: 144px minmax(180px, 0.75fr) minmax(280px, 1fr);
+}
+
+.academy-player-photo {
+  aspect-ratio: 4 / 5;
+  height: 180px;
+  width: 144px;
+}
+
+.academy-enrollment-facts {
+  align-content: start;
+  display: grid;
+  gap: 9px;
+  font-size: 13px;
+}
+
+.academy-enrollment-facts span,
+.academy-enrollment-facts strong {
+  display: block;
+}
+
+.academy-medical-note {
+  background: #fff8d9;
+  border-left: 3px solid var(--academy-yellow);
+  padding: 9px;
+}
+
+.academy-enrollment-action {
+  align-content: start;
+}
+
+.academy-group-list article {
+  align-items: center;
+  border-top: 1px solid #e0e5e1;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: 54px minmax(140px, 0.5fr) minmax(0, 1fr);
+  padding: 13px 0;
+}
+
+.academy-group-list article > strong {
+  background: var(--academy-yellow);
+  padding: 7px;
+  text-align: center;
+}
+
+.academy-status-dot {
+  background: #8f9993;
+  border-radius: 50%;
+  height: 10px;
+  width: 10px;
+}
+
+.academy-status-dot--submitted,
+.academy-status-dot--review,
+.academy-status-dot--trial {
+  background: #d49a00;
+}
+
+.academy-status-dot--accepted,
+.academy-status-dot--active {
+  background: #27845f;
+}
+
+.academy-status-dot--rejected,
+.academy-status-dot--suspended {
+  background: #b8493d;
+}
+
+@media (max-width: 760px) {
+  .academy-shell {
+    padding: 42px 16px 72px;
+  }
+
+  .academy-form-grid,
+  .academy-player-grid,
+  .academy-coach-grid,
+  .academy-admin-grid,
+  .academy-roster,
+  .academy-auth-page {
+    grid-template-columns: 1fr;
+  }
+
+  .academy-auth-page {
+    padding: 0;
+  }
+
+  .academy-auth-intro,
+  .academy-auth-form,
+  .academy-form-section,
+  .academy-consent-panel,
+  .academy-section {
+    padding: 20px;
+  }
+
+  .academy-workspace-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .academy-submit,
+  .academy-workspace-header .academy-button {
+    justify-self: stretch;
+    width: 100%;
+  }
+
+  .academy-player-card {
+    align-items: start;
+  }
+
+  .academy-schedule article {
+    align-items: start;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .academy-schedule time {
+    flex-basis: auto;
+  }
+
+  .academy-enrollment-body,
+  .academy-group-list article {
+    grid-template-columns: 1fr;
+  }
+}

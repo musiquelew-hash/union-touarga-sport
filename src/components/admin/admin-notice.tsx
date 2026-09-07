@@ -23,6 +23,9 @@ export function AdminNotice({ saved, error }: { saved?: string; error?: string }
       "import-running": "Le remplissage initial est déjà en cours.",
       "initial-import": "Le remplissage initial a échoué. Vous pouvez le relancer sans perdre les données existantes.",
       "image-upload": "L’image n’a pas pu être importée. Utilisez un fichier JPG, PNG, WebP ou GIF de 8 Mo maximum.",
+      capacity: "Ce groupe a atteint sa capacité maximale.",
+      "invalid-group": "Le groupe ou la catégorie sélectionnée n’est pas valide.",
+      "schedule-conflict": "Ce créneau chevauche une séance existante.",
       database: "La base MySQL n’est pas joignable. Vérifiez sa liaison et ses variables Railway.",
     };
     const message = messages[error] || messages.database;

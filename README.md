@@ -10,6 +10,7 @@ Site moderne et responsive consacré à l'Union Touarga Sport. Les matchs et le 
 - Actualités et galerie de photos officielles, avec textes, résumés et images modifiables
 - Histoire et identité du club
 - Dashboard administrateur pour gérer les textes, joueurs, staff, actualités, médias et tous les visuels globaux
+- Académie U10–U21 avec candidatures famille, groupes, entraîneurs, séances, présences et observations
 - Super-administrateur MySQL pour créer, suspendre, promouvoir et supprimer les autres comptes
 - Remplissage initial unique depuis l'ancien site officiel, déclenché par le super-administrateur
 - Publication, masquage et ordre d'affichage des contenus importés ou créés dans le dashboard
@@ -52,6 +53,14 @@ Les photos présentes au moment de l'import sont déjà copiées dans `public/co
 
 Le bootstrap applicatif avec `ADMIN_USERNAME`, `ADMIN_DISPLAY_NAME` et `ADMIN_PASSWORD` reste disponible comme solution de secours. Ces variables ne réinitialisent jamais un compte existant. Le super-administrateur peut ensuite changer son mot de passe dans `/admin/compte` et gérer les autres accès dans `/admin/administrateurs`; les mots de passe sont hachés avec bcrypt et les opérations sensibles sont consignées dans `admin_audit_log`.
 
+### Académie U10–U21
+
+Le formulaire public `/academie/inscription` crée en une transaction le compte du responsable légal, le dossier du joueur et son inscription pour la saison courante. La catégorie U10 à U21 est calculée depuis la date de naissance. Un même compte famille peut ensuite inscrire plusieurs enfants et suivre leurs statuts, leurs groupes, le planning et les observations partagées.
+
+Le centre `/admin/academie` permet aux administrateurs de traiter le cycle `Candidature reçue → Étude → Essai → Accepté → Actif`, d’affecter les joueurs aux groupes et de surveiller les capacités. Le super-administrateur crée les comptes entraîneurs; chaque entraîneur accède à `/academie/espace`, uniquement à ses groupes, pour publier des créneaux, saisir les présences et ajouter des observations privées ou visibles par la famille.
+
+Les comptes Académie utilisent une session distincte de l’administration. Les mots de passe sont hachés avec bcrypt, les cookies sont signés et invalidables, et les photos téléversées sont conservées dans MySQL pour survivre aux redéploiements Railway.
+
 ### Structure MySQL
 
 - `players` : identité, poste, statistiques, publication et provenance des joueurs
@@ -64,6 +73,12 @@ Le bootstrap applicatif avec `ADMIN_USERNAME`, `ADMIN_DISPLAY_NAME` et `ADMIN_PA
 - `admin_users` : comptes, rôles, état et version de session
 - `content_imports` : verrou et résultat du remplissage initial unique
 - `admin_audit_log` : journal des opérations de sécurité
+- `academy_accounts` : accès séparés des entraîneurs et responsables légaux
+- `academy_guardians`, `academy_coaches` : profils et coordonnées des adultes
+- `academy_players`, `academy_player_guardians` : jeunes joueurs et liens familiaux
+- `academy_groups`, `academy_enrollments` : groupes U10–U21 et historique saisonnier des dossiers
+- `academy_training_sessions`, `academy_attendance` : créneaux et feuilles de présence
+- `academy_player_notes` : observations sportives, médicales, administratives ou comportementales
 - `schema_migrations` : migrations déjà appliquées
 
 Il n'existe volontairement aucune table de matchs ou de classement : ces deux rubriques restent alimentées par les APIs sportives publiques.

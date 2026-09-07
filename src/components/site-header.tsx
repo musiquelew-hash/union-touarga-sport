@@ -13,6 +13,7 @@ const navigation = [
   { href: "/classement", label: "Classement" },
   { href: "/club", label: "Le club" },
   { href: "/medias", label: "Médias" },
+  { href: "/academie/inscription", label: "Académie" },
 ];
 
 export function SiteHeader({

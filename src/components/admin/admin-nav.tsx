@@ -3,6 +3,7 @@
 import {
   ExternalLink,
   FileText,
+  GraduationCap,
   Images,
   LayoutDashboard,
   LogOut,
@@ -27,6 +28,7 @@ const items = [
   { href: "/admin/gestion/staff", label: "Staff", icon: UserRoundCog },
   { href: "/admin/gestion/news", label: "Actualités", icon: Newspaper },
   { href: "/admin/gestion/media", label: "Médias", icon: Images },
+  { href: "/admin/academie", label: "Académie U10–U21", icon: GraduationCap },
 ];
 
 export function AdminNav({ isSuperAdmin = false, onNavigate }: { isSuperAdmin?: boolean; onNavigate?: () => void }) {

@@ -1,10 +1,11 @@
-import { ArrowRight, DatabaseZap, RefreshCw } from "lucide-react";
+import { ArrowRight, DatabaseZap, GraduationCap, RefreshCw } from "lucide-react";
 import Link from "next/link";
 import { runInitialContentImportAction } from "@/app/admin/actions";
 import { AdminNotice } from "@/components/admin/admin-notice";
 import { AdminSubmitButton } from "@/components/admin/admin-submit-button";
 import { requireAdmin } from "@/lib/admin-auth";
 import { getInitialContentImportStatusSafe } from "@/lib/initial-content-import";
+import { getAcademyCountsSafe } from "@/lib/academy";
 import { getCmsCountsSafe, isCmsDatabaseConfigured } from "@/lib/relational-cms-db";
 
 const modules = [
@@ -19,8 +20,9 @@ export default async function AdminDashboardPage({
 }: {
   searchParams: Promise<{ saved?: string; error?: string }>;
 }) {
-  const [counts, params, session, importStatus] = await Promise.all([
+  const [counts, academyCounts, params, session, importStatus] = await Promise.all([
     getCmsCountsSafe(),
+    getAcademyCountsSafe(),
     searchParams,
     requireAdmin(),
     getInitialContentImportStatusSafe(),
@@ -67,6 +69,17 @@ export default async function AdminDashboardPage({
             <ArrowRight aria-hidden="true" size={18} />
           </Link>
         ))}
+      </section>
+
+      <section className="admin-panel admin-source-panel">
+        <div className="admin-panel__icon"><GraduationCap aria-hidden="true" size={24} /></div>
+        <div>
+          <h2>Académie U10–U21</h2>
+          <p>{academyCounts.applications} dossier(s) en cours, {academyCounts.activePlayers} joueur(s) actif(s), {academyCounts.groups} groupe(s) et {academyCounts.coaches} entraîneur(s).</p>
+        </div>
+        <Link className="admin-button admin-button--secondary" href="/admin/academie">
+          Piloter l’académie <ArrowRight aria-hidden="true" size={17} />
+        </Link>
       </section>
 
       <section className="admin-panel admin-source-panel">

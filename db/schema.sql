@@ -256,3 +256,187 @@ CREATE TABLE IF NOT EXISTS admin_audit_log (
   CONSTRAINT admin_audit_log_target_fk
     FOREIGN KEY (target_admin_user_id) REFERENCES admin_users (id) ON DELETE SET NULL
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS academy_accounts (
+  account_id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  email VARCHAR(255) NOT NULL,
+  display_name VARCHAR(160) NOT NULL,
+  password_hash VARCHAR(255) NOT NULL,
+  role ENUM('coach', 'guardian') NOT NULL,
+  phone VARCHAR(32) NOT NULL,
+  is_active BOOLEAN NOT NULL DEFAULT TRUE,
+  session_version INT UNSIGNED NOT NULL DEFAULT 1,
+  last_login_at DATETIME NULL,
+  created_by_admin_id BIGINT UNSIGNED NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (account_id),
+  UNIQUE KEY academy_accounts_email (email),
+  KEY academy_accounts_role_active (role, is_active),
+  CONSTRAINT academy_accounts_created_by_fk
+    FOREIGN KEY (created_by_admin_id) REFERENCES admin_users (id) ON DELETE SET NULL
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS academy_guardians (
+  guardian_id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  account_id BIGINT UNSIGNED NOT NULL,
+  address_text VARCHAR(500) NOT NULL,
+  city VARCHAR(120) NOT NULL DEFAULT 'Rabat',
+  emergency_phone VARCHAR(32) NOT NULL,
+  PRIMARY KEY (guardian_id),
+  UNIQUE KEY academy_guardians_account (account_id),
+  CONSTRAINT academy_guardians_account_fk
+    FOREIGN KEY (account_id) REFERENCES academy_accounts (account_id) ON DELETE CASCADE
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS academy_coaches (
+  coach_id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  account_id BIGINT UNSIGNED NOT NULL,
+  license_level VARCHAR(100) NULL,
+  specialty VARCHAR(160) NULL,
+  biography TEXT NULL,
+  PRIMARY KEY (coach_id),
+  UNIQUE KEY academy_coaches_account (account_id),
+  CONSTRAINT academy_coaches_account_fk
+    FOREIGN KEY (account_id) REFERENCES academy_accounts (account_id) ON DELETE CASCADE
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS academy_groups (
+  group_id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  age_category ENUM('U10', 'U11', 'U12', 'U13', 'U14', 'U15', 'U16', 'U17', 'U18', 'U19', 'U20', 'U21') NOT NULL,
+  group_name VARCHAR(160) NOT NULL,
+  season_label VARCHAR(20) NOT NULL,
+  coach_id BIGINT UNSIGNED NULL,
+  capacity SMALLINT UNSIGNED NOT NULL DEFAULT 24,
+  default_venue VARCHAR(255) NOT NULL,
+  is_active BOOLEAN NOT NULL DEFAULT TRUE,
+  created_by_admin_id BIGINT UNSIGNED NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (group_id),
+  UNIQUE KEY academy_groups_category_season (age_category, season_label),
+  KEY academy_groups_coach (coach_id, is_active),
+  CONSTRAINT academy_groups_coach_fk
+    FOREIGN KEY (coach_id) REFERENCES academy_coaches (coach_id) ON DELETE SET NULL,
+  CONSTRAINT academy_groups_created_by_fk
+    FOREIGN KEY (created_by_admin_id) REFERENCES admin_users (id) ON DELETE SET NULL
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS academy_players (
+  player_id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  registration_number VARCHAR(32) NOT NULL,
+  first_name VARCHAR(120) NOT NULL,
+  last_name VARCHAR(120) NOT NULL,
+  birth_date DATE NOT NULL,
+  gender ENUM('male', 'female') NOT NULL,
+  nationality VARCHAR(100) NOT NULL DEFAULT 'Maroc',
+  birth_place VARCHAR(160) NULL,
+  school_name VARCHAR(255) NULL,
+  school_level VARCHAR(120) NULL,
+  preferred_foot ENUM('right', 'left', 'both', 'unknown') NOT NULL DEFAULT 'unknown',
+  medical_notes TEXT NULL,
+  photo_url TEXT NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (player_id),
+  UNIQUE KEY academy_players_registration_number (registration_number),
+  KEY academy_players_name (last_name, first_name),
+  KEY academy_players_birth_date (birth_date)
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS academy_player_guardians (
+  player_id BIGINT UNSIGNED NOT NULL,
+  guardian_id BIGINT UNSIGNED NOT NULL,
+  relationship_label VARCHAR(80) NOT NULL,
+  is_primary BOOLEAN NOT NULL DEFAULT FALSE,
+  can_pick_up BOOLEAN NOT NULL DEFAULT TRUE,
+  PRIMARY KEY (player_id, guardian_id),
+  KEY academy_player_guardians_guardian (guardian_id),
+  CONSTRAINT academy_player_guardians_player_fk
+    FOREIGN KEY (player_id) REFERENCES academy_players (player_id) ON DELETE CASCADE,
+  CONSTRAINT academy_player_guardians_guardian_fk
+    FOREIGN KEY (guardian_id) REFERENCES academy_guardians (guardian_id) ON DELETE CASCADE
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS academy_enrollments (
+  enrollment_id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  player_id BIGINT UNSIGNED NOT NULL,
+  group_id BIGINT UNSIGNED NULL,
+  season_label VARCHAR(20) NOT NULL,
+  requested_category ENUM('U10', 'U11', 'U12', 'U13', 'U14', 'U15', 'U16', 'U17', 'U18', 'U19', 'U20', 'U21') NOT NULL,
+  status ENUM('submitted', 'review', 'trial', 'accepted', 'active', 'suspended', 'rejected', 'left') NOT NULL DEFAULT 'submitted',
+  consent_medical BOOLEAN NOT NULL DEFAULT FALSE,
+  consent_image BOOLEAN NOT NULL DEFAULT FALSE,
+  submitted_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  trial_at DATETIME NULL,
+  decision_at DATETIME NULL,
+  updated_by_admin_id BIGINT UNSIGNED NULL,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (enrollment_id),
+  UNIQUE KEY academy_enrollments_player_season (player_id, season_label),
+  KEY academy_enrollments_status (status, requested_category),
+  KEY academy_enrollments_group (group_id, status),
+  CONSTRAINT academy_enrollments_player_fk
+    FOREIGN KEY (player_id) REFERENCES academy_players (player_id) ON DELETE CASCADE,
+  CONSTRAINT academy_enrollments_group_fk
+    FOREIGN KEY (group_id) REFERENCES academy_groups (group_id) ON DELETE SET NULL,
+  CONSTRAINT academy_enrollments_admin_fk
+    FOREIGN KEY (updated_by_admin_id) REFERENCES admin_users (id) ON DELETE SET NULL
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS academy_training_sessions (
+  session_id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  group_id BIGINT UNSIGNED NOT NULL,
+  coach_id BIGINT UNSIGNED NOT NULL,
+  starts_at DATETIME NOT NULL,
+  ends_at DATETIME NOT NULL,
+  venue VARCHAR(255) NOT NULL,
+  focus_text VARCHAR(500) NOT NULL,
+  status ENUM('planned', 'completed', 'cancelled') NOT NULL DEFAULT 'planned',
+  coach_notes TEXT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (session_id),
+  KEY academy_training_sessions_group_date (group_id, starts_at),
+  KEY academy_training_sessions_coach_date (coach_id, starts_at),
+  CONSTRAINT academy_training_sessions_group_fk
+    FOREIGN KEY (group_id) REFERENCES academy_groups (group_id) ON DELETE CASCADE,
+  CONSTRAINT academy_training_sessions_coach_fk
+    FOREIGN KEY (coach_id) REFERENCES academy_coaches (coach_id) ON DELETE RESTRICT,
+  CONSTRAINT academy_training_sessions_dates CHECK (ends_at > starts_at)
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS academy_attendance (
+  session_id BIGINT UNSIGNED NOT NULL,
+  player_id BIGINT UNSIGNED NOT NULL,
+  status ENUM('present', 'late', 'absent', 'excused') NOT NULL,
+  note_text VARCHAR(500) NULL,
+  recorded_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (session_id, player_id),
+  CONSTRAINT academy_attendance_session_fk
+    FOREIGN KEY (session_id) REFERENCES academy_training_sessions (session_id) ON DELETE CASCADE,
+  CONSTRAINT academy_attendance_player_fk
+    FOREIGN KEY (player_id) REFERENCES academy_players (player_id) ON DELETE CASCADE
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS academy_player_notes (
+  note_id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  player_id BIGINT UNSIGNED NOT NULL,
+  author_account_id BIGINT UNSIGNED NULL,
+  author_admin_id BIGINT UNSIGNED NULL,
+  category ENUM('sport', 'medical', 'administrative', 'behavior') NOT NULL DEFAULT 'sport',
+  visibility ENUM('staff_only', 'guardian') NOT NULL DEFAULT 'staff_only',
+  note_text TEXT NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (note_id),
+  KEY academy_player_notes_player_date (player_id, created_at),
+  CONSTRAINT academy_player_notes_player_fk
+    FOREIGN KEY (player_id) REFERENCES academy_players (player_id) ON DELETE CASCADE,
+  CONSTRAINT academy_player_notes_account_fk
+    FOREIGN KEY (author_account_id) REFERENCES academy_accounts (account_id) ON DELETE SET NULL,
+  CONSTRAINT academy_player_notes_admin_fk
+    FOREIGN KEY (author_admin_id) REFERENCES admin_users (id) ON DELETE SET NULL,
+  CONSTRAINT academy_player_notes_author CHECK (author_account_id IS NOT NULL OR author_admin_id IS NOT NULL)
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+INSERT IGNORE INTO schema_migrations (migration_key) VALUES ('006_academy_lifecycle');
