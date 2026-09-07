@@ -9,6 +9,8 @@ import { ensureDatabaseSchema, getDatabasePool, isDatabaseConfigured } from "@/l
 
 const ACADEMY_COOKIE = "uts_academy_session";
 const SESSION_DURATION_SECONDS = 60 * 60 * 12;
+const SESSION_REFRESH_THRESHOLD_SECONDS = 60 * 60 * 3;
+const SESSION_ABSOLUTE_DURATION_SECONDS = 60 * 60 * 24 * 14;
 
 export type AcademyAccountRole = "coach" | "guardian" | "player";
 export type AcademyAccount = {
@@ -72,16 +74,22 @@ export async function authenticateAcademyAccount(identifier: string, password: s
   return mapAccount(row);
 }
 
-export async function createAcademySession(account: AcademyAccount) {
-  const expiresAt = Math.floor(Date.now() / 1000) + SESSION_DURATION_SECONDS;
-  const payload = Buffer.from(JSON.stringify({ accountId: account.id, sessionVersion: account.sessionVersion, expiresAt })).toString("base64url");
+async function setAcademySession(account: AcademyAccount, issuedAt: number, absoluteExpiresAt: number) {
+  const now = Math.floor(Date.now() / 1000);
+  const expiresAt = Math.min(now + SESSION_DURATION_SECONDS, absoluteExpiresAt);
+  const payload = Buffer.from(JSON.stringify({ accountId: account.id, sessionVersion: account.sessionVersion, issuedAt, expiresAt, absoluteExpiresAt })).toString("base64url");
   (await cookies()).set(ACADEMY_COOKIE, `${payload}.${sign(payload)}`, {
     httpOnly: true,
-    maxAge: SESSION_DURATION_SECONDS,
+    maxAge: Math.max(0, expiresAt - now),
     path: "/academie",
     sameSite: "strict",
     secure: process.env.NODE_ENV === "production",
   });
+}
+
+export async function createAcademySession(account: AcademyAccount) {
+  const issuedAt = Math.floor(Date.now() / 1000);
+  await setAcademySession(account, issuedAt, issuedAt + SESSION_ABSOLUTE_DURATION_SECONDS);
 }
 
 export async function clearAcademySession() {
@@ -95,13 +103,33 @@ export async function getAcademySession() {
   const [payload, signature] = token.split(".");
   if (!payload || !signature || !safeEqual(signature, sign(payload))) return null;
   try {
-    const data = JSON.parse(Buffer.from(payload, "base64url").toString("utf8")) as { accountId?: number; sessionVersion?: number; expiresAt?: number };
-    if (!data.accountId || !data.sessionVersion || !data.expiresAt || data.expiresAt <= Math.floor(Date.now() / 1000)) return null;
+    const data = JSON.parse(Buffer.from(payload, "base64url").toString("utf8")) as {
+      accountId?: number;
+      sessionVersion?: number;
+      issuedAt?: number;
+      expiresAt?: number;
+      absoluteExpiresAt?: number;
+    };
+    const now = Math.floor(Date.now() / 1000);
+    if (!data.accountId || !data.sessionVersion || !data.expiresAt || data.expiresAt <= now) return null;
+    const issuedAt = data.issuedAt || data.expiresAt - SESSION_DURATION_SECONDS;
+    const absoluteExpiresAt = data.absoluteExpiresAt || issuedAt + SESSION_ABSOLUTE_DURATION_SECONDS;
+    if (absoluteExpiresAt <= now) return null;
     const account = await findActiveAccount(data.accountId);
-    return account?.sessionVersion === data.sessionVersion ? account : null;
+    if (!account || account.sessionVersion !== data.sessionVersion) return null;
+    return { ...account, issuedAt, expiresAt: data.expiresAt, absoluteExpiresAt };
   } catch {
     return null;
   }
+}
+
+export async function refreshAcademySession() {
+  const session = await getAcademySession();
+  if (!session) return false;
+  if (session.expiresAt - Math.floor(Date.now() / 1000) <= SESSION_REFRESH_THRESHOLD_SECONDS) {
+    await setAcademySession(session, session.issuedAt, session.absoluteExpiresAt);
+  }
+  return true;
 }
 
 export async function requireAcademyAccount(role?: AcademyAccountRole) {

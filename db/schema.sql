@@ -279,6 +279,50 @@ CREATE TABLE IF NOT EXISTS academy_accounts (
     FOREIGN KEY (created_by_admin_id) REFERENCES admin_users (id) ON DELETE SET NULL
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS academy_settings (
+  settings_id TINYINT UNSIGNED NOT NULL DEFAULT 1,
+  season_label VARCHAR(20) NOT NULL,
+  page_title VARCHAR(180) NOT NULL,
+  intro_text VARCHAR(1000) NOT NULL,
+  registration_question VARCHAR(255) NOT NULL,
+  guardian_mode_label VARCHAR(120) NOT NULL,
+  adult_mode_label VARCHAR(120) NOT NULL,
+  guardian_policy_text VARCHAR(1000) NOT NULL,
+  adult_policy_text VARCHAR(1000) NOT NULL,
+  account_help_text VARCHAR(500) NOT NULL,
+  eligibility_text VARCHAR(1000) NOT NULL,
+  consent_text VARCHAR(1000) NOT NULL,
+  trust_data_text VARCHAR(160) NOT NULL,
+  trust_family_text VARCHAR(160) NOT NULL,
+  updated_by_admin_id BIGINT UNSIGNED NULL,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (settings_id),
+  CONSTRAINT academy_settings_singleton CHECK (settings_id = 1),
+  CONSTRAINT academy_settings_admin_fk
+    FOREIGN KEY (updated_by_admin_id) REFERENCES admin_users (id) ON DELETE SET NULL
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+INSERT IGNORE INTO academy_settings (
+  settings_id, season_label, page_title, intro_text, registration_question,
+  guardian_mode_label, adult_mode_label, guardian_policy_text, adult_policy_text,
+  account_help_text, eligibility_text, consent_text, trust_data_text, trust_family_text
+) VALUES (
+  1,
+  CONCAT(IF(MONTH(UTC_DATE()) >= 7, YEAR(UTC_DATE()), YEAR(UTC_DATE()) - 1), '/', IF(MONTH(UTC_DATE()) >= 7, YEAR(UTC_DATE()) + 1, YEAR(UTC_DATE()))),
+  'Inscription Académie U10–U21',
+  'Un dossier famille pour les mineurs, ou un compte personnel avec CIN pour les joueurs de 18 à 21 ans.',
+  'Qui dépose la candidature ?',
+  'Parent ou tuteur',
+  'Joueur de 18 à 21 ans',
+  'Pour tout joueur mineur, le compte et la candidature sont créés par son responsable légal.',
+  'Le joueur majeur crée son propre compte. Une copie de sa CIN est obligatoire.',
+  'La connexion sera possible avec le nom d’utilisateur ou l’e-mail.',
+  'Les filles et les garçons peuvent candidater dans toutes les catégories U10 à U21.',
+  'En transmettant ce dossier, vous certifiez l’exactitude des informations et acceptez leur traitement pour la candidature à l’Académie UTS.',
+  'Données protégées',
+  'Un compte pour toute la famille'
+);
+
 CREATE TABLE IF NOT EXISTS academy_guardians (
   guardian_id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   account_id BIGINT UNSIGNED NOT NULL,

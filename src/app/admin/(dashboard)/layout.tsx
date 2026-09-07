@@ -3,9 +3,12 @@ import Image from "next/image";
 import Link from "next/link";
 import { logoutAction } from "@/app/admin/actions";
 import { AdminMobileHeader, AdminNav } from "@/components/admin/admin-nav";
+import { SessionKeepAlive } from "@/components/session-keepalive";
 import { requireAdmin } from "@/lib/admin-auth";
 import { checkCmsConnection } from "@/lib/relational-cms-db";
 import { getSiteContent } from "@/lib/site-content";
+
+export const dynamic = "force-dynamic";
 
 export default async function AdminDashboardLayout({ children }: { children: React.ReactNode }) {
   const [session, databaseReady, content] = await Promise.all([
@@ -16,6 +19,7 @@ export default async function AdminDashboardLayout({ children }: { children: Rea
 
   return (
     <div className="admin-layout">
+      <SessionKeepAlive endpoint="/admin/api/session/refresh" />
       <AdminMobileHeader crestUrl={content.crestWhiteUrl} isSuperAdmin={session.role === "super_admin"} username={session.username} />
       <aside className="admin-sidebar">
         <div className="admin-sidebar__brand">

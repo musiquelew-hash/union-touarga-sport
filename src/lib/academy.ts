@@ -3,12 +3,29 @@ import "server-only";
 import { randomUUID } from "node:crypto";
 import { hash } from "bcryptjs";
 import type { PoolConnection, ResultSetHeader, RowDataPacket } from "mysql2/promise";
+import { unstable_cache } from "next/cache";
 import { ensureDatabaseSchema, getDatabasePool } from "@/lib/database";
 
 export const academyCategories = ["U10", "U11", "U12", "U13", "U14", "U15", "U16", "U17", "U18", "U19", "U20", "U21"] as const;
 export const enrollmentStatuses = ["submitted", "review", "trial", "accepted", "active", "suspended", "rejected", "left"] as const;
 export type AcademyCategory = (typeof academyCategories)[number];
 export type EnrollmentStatus = (typeof enrollmentStatuses)[number];
+
+export type AcademyRegistrationSettings = {
+  seasonLabel: string;
+  pageTitle: string;
+  introText: string;
+  registrationQuestion: string;
+  guardianModeLabel: string;
+  adultModeLabel: string;
+  guardianPolicyText: string;
+  adultPolicyText: string;
+  accountHelpText: string;
+  eligibilityText: string;
+  consentText: string;
+  trustDataText: string;
+  trustFamilyText: string;
+};
 
 export const enrollmentLabels: Record<EnrollmentStatus, string> = {
   submitted: "Candidature reçue",
@@ -31,6 +48,62 @@ export function currentSeason() {
   const now = new Date();
   const start = now.getUTCMonth() >= 6 ? now.getUTCFullYear() : now.getUTCFullYear() - 1;
   return `${start}/${start + 1}`;
+}
+
+export const defaultAcademyRegistrationSettings: AcademyRegistrationSettings = {
+  seasonLabel: currentSeason(),
+  pageTitle: "Inscription Académie U10–U21",
+  introText: "Un dossier famille pour les mineurs, ou un compte personnel avec CIN pour les joueurs de 18 à 21 ans.",
+  registrationQuestion: "Qui dépose la candidature ?",
+  guardianModeLabel: "Parent ou tuteur",
+  adultModeLabel: "Joueur de 18 à 21 ans",
+  guardianPolicyText: "Pour tout joueur mineur, le compte et la candidature sont créés par son responsable légal.",
+  adultPolicyText: "Le joueur majeur crée son propre compte. Une copie de sa CIN est obligatoire.",
+  accountHelpText: "La connexion sera possible avec le nom d’utilisateur ou l’e-mail.",
+  eligibilityText: "Les filles et les garçons peuvent candidater dans toutes les catégories U10 à U21.",
+  consentText: "En transmettant ce dossier, vous certifiez l’exactitude des informations et acceptez leur traitement pour la candidature à l’Académie UTS.",
+  trustDataText: "Données protégées",
+  trustFamilyText: "Un compte pour toute la famille",
+};
+
+async function readAcademyRegistrationSettings(): Promise<AcademyRegistrationSettings> {
+  await ensureDatabaseSchema();
+  const [rows] = await getDatabasePool().query<(RowDataPacket & {
+    season_label: string; page_title: string; intro_text: string; registration_question: string;
+    guardian_mode_label: string; adult_mode_label: string; guardian_policy_text: string;
+    adult_policy_text: string; account_help_text: string; eligibility_text: string;
+    consent_text: string; trust_data_text: string; trust_family_text: string;
+  })[]>("SELECT * FROM academy_settings WHERE settings_id = 1 LIMIT 1");
+  const row = rows[0];
+  if (!row) return defaultAcademyRegistrationSettings;
+  return {
+    seasonLabel: row.season_label, pageTitle: row.page_title, introText: row.intro_text,
+    registrationQuestion: row.registration_question, guardianModeLabel: row.guardian_mode_label,
+    adultModeLabel: row.adult_mode_label, guardianPolicyText: row.guardian_policy_text,
+    adultPolicyText: row.adult_policy_text, accountHelpText: row.account_help_text,
+    eligibilityText: row.eligibility_text, consentText: row.consent_text,
+    trustDataText: row.trust_data_text, trustFamilyText: row.trust_family_text,
+  };
+}
+
+export const getAcademyRegistrationSettings = unstable_cache(
+  readAcademyRegistrationSettings,
+  ["academy-registration-settings"],
+  { revalidate: 300, tags: ["academy-registration-settings"] },
+);
+
+export async function updateAcademyRegistrationSettings(settings: AcademyRegistrationSettings, adminId: number) {
+  await ensureDatabaseSchema();
+  await getDatabasePool().execute(
+    `UPDATE academy_settings SET season_label = ?, page_title = ?, intro_text = ?, registration_question = ?,
+      guardian_mode_label = ?, adult_mode_label = ?, guardian_policy_text = ?, adult_policy_text = ?,
+      account_help_text = ?, eligibility_text = ?, consent_text = ?, trust_data_text = ?, trust_family_text = ?,
+      updated_by_admin_id = ? WHERE settings_id = 1`,
+    [settings.seasonLabel, settings.pageTitle, settings.introText, settings.registrationQuestion,
+      settings.guardianModeLabel, settings.adultModeLabel, settings.guardianPolicyText, settings.adultPolicyText,
+      settings.accountHelpText, settings.eligibilityText, settings.consentText, settings.trustDataText,
+      settings.trustFamilyText, adminId],
+  );
 }
 
 export function categoryForBirthDate(birthDate: string, season = currentSeason()): AcademyCategory | null {
@@ -259,8 +332,8 @@ async function insertPlayerApplication(
   input: AcademyPlayerApplication,
   accountId: number | null,
   guardianId: number | null,
+  season: string,
 ) {
-  const season = currentSeason();
   const category = categoryForBirthDate(input.birthDate, season);
   if (!category) throw new AcademyError("invalid-group");
   const registrationNumber = `UTS-${new Date().getUTCFullYear()}-${randomUUID().slice(0, 8).toUpperCase()}`;
@@ -292,6 +365,7 @@ export async function createGuardianApplication(input: {
   await ensureDatabaseSchema();
   const players = [input.player, ...input.additionalPlayers];
   if (players.some((player) => isAdultAcademyApplicant(player.birthDate))) throw new AcademyError("age-policy");
+  const { seasonLabel } = await getAcademyRegistrationSettings();
   const connection = await getDatabasePool().getConnection();
   try {
     await connection.beginTransaction();
@@ -306,7 +380,7 @@ export async function createGuardianApplication(input: {
     );
     const registrations = [];
     for (const player of players) {
-      registrations.push(await insertPlayerApplication(connection, player, null, Number(guardian.insertId)));
+      registrations.push(await insertPlayerApplication(connection, player, null, Number(guardian.insertId), seasonLabel));
     }
     await connection.commit();
     return { accountId: Number(account.insertId), registrations };
@@ -326,6 +400,7 @@ export async function createIndependentPlayerApplication(input: {
 }) {
   await ensureDatabaseSchema();
   if (!isAdultAcademyApplicant(input.player.birthDate)) throw new AcademyError("age-policy");
+  const { seasonLabel } = await getAcademyRegistrationSettings();
   const connection = await getDatabasePool().getConnection();
   try {
     await connection.beginTransaction();
@@ -335,7 +410,7 @@ export async function createIndependentPlayerApplication(input: {
        VALUES (?, ?, ?, ?, 'player', ?)`,
       [input.username, input.email, `${input.player.firstName} ${input.player.lastName}`, passwordHash, input.phone],
     );
-    const registration = await insertPlayerApplication(connection, input.player, Number(account.insertId), null);
+    const registration = await insertPlayerApplication(connection, input.player, Number(account.insertId), null, seasonLabel);
     await connection.execute(
       `UPDATE academy_players SET identity_document_name = ?, identity_document_mime = ?, identity_document_data = ?
        WHERE player_id = ?`,
@@ -359,6 +434,7 @@ export async function createPlayerForGuardian(input: {
 }) {
   await ensureDatabaseSchema();
   if (isAdultAcademyApplicant(input.birthDate)) throw new AcademyError("age-policy");
+  const { seasonLabel } = await getAcademyRegistrationSettings();
   const connection = await getDatabasePool().getConnection();
   try {
     await connection.beginTransaction();
@@ -366,7 +442,7 @@ export async function createPlayerForGuardian(input: {
       "SELECT guardian_id FROM academy_guardians WHERE account_id = ? LIMIT 1", [input.accountId],
     );
     if (!guardians[0]) throw new AcademyError("forbidden");
-    const result = await insertPlayerApplication(connection, { ...input, birthPlace: "", schoolLevel: "" }, null, Number(guardians[0].guardian_id));
+    const result = await insertPlayerApplication(connection, { ...input, birthPlace: "", schoolLevel: "" }, null, Number(guardians[0].guardian_id), seasonLabel);
     await connection.commit();
     return result.registrationNumber;
   } catch (error) {

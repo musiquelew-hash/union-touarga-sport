@@ -1,7 +1,7 @@
 "use server";
 
 import { randomUUID } from "node:crypto";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import {
@@ -82,7 +82,7 @@ function published(formData: FormData) {
 }
 
 function publicPaths() {
-  ["/", "/equipe", "/matchs", "/classement", "/medias", "/club"].forEach((path) => revalidatePath(path));
+  revalidatePath("/", "layout");
 }
 
 async function uploadedImages<const Name extends string>(
@@ -236,7 +236,10 @@ export async function saveSiteContentAction(formData: FormData) {
   const parsed = siteContentSchema.safeParse(raw);
   if (!parsed.success) redirect("/admin/contenu?error=validation");
 
-  return persist(() => saveCmsSetting("site-content", parsed.data, admin.id), "/admin/contenu");
+  return persist(async () => {
+    await saveCmsSetting("site-content", parsed.data, admin.id);
+    updateTag("site-content");
+  }, "/admin/contenu");
 }
 
 const playerSchema = z.object({

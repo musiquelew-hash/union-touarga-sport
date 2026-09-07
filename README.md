@@ -40,7 +40,7 @@ Copier `.env.example` vers `.env.local`, puis renseigner :
 - `PORT` : port HTTP du service, `8080` par défaut.
 - `ADMIN_USERNAME` : identifiant de secours utilisé par le bootstrap applicatif.
 - `ADMIN_DISPLAY_NAME` : nom affiché du compte de secours.
-- `ADMIN_PASSWORD` : mot de passe de secours facultatif, d'au moins 12 caractères.
+- `ADMIN_PASSWORD` : mot de passe de secours facultatif.
 - `ADMIN_SESSION_SECRET` : secret aléatoire d'au moins 32 caractères, distinct du mot de passe.
 
 Le dashboard est accessible sur [http://localhost:8080/admin](http://localhost:8080/admin). Le schéma est créé automatiquement; sa définition complète est disponible dans `db/schema.sql`.
@@ -55,11 +55,13 @@ Le bootstrap applicatif avec `ADMIN_USERNAME`, `ADMIN_DISPLAY_NAME` et `ADMIN_PA
 
 ### Académie U10–U21
 
-Le formulaire public `/academie/inscription` propose deux parcours. Un joueur mineur est inscrit par son parent ou tuteur, qui peut déposer plusieurs candidatures de filles ou garçons dans le même compte famille, immédiatement ou plus tard depuis son espace. De 18 à 21 ans, le joueur peut créer son propre compte à condition de joindre sa carte nationale au format PDF, JPG ou PNG. La catégorie U10 à U21 est calculée depuis la date de naissance et chaque fiche accepte un lien YouTube facultatif.
+Le formulaire public `/academie/inscription` propose deux parcours. Un joueur mineur est inscrit par son parent ou tuteur, qui peut déposer plusieurs candidatures de filles ou garçons dans le même compte famille, immédiatement ou plus tard depuis son espace. De 18 à 21 ans, le joueur peut créer son propre compte à condition de joindre sa CIN au format PDF, JPG ou PNG. La catégorie U10 à U21 est calculée depuis la date de naissance et chaque fiche accepte un lien YouTube facultatif.
 
-Le centre `/admin/academie` permet aux administrateurs de traiter le cycle `Candidature reçue → Étude → Essai → Accepté → Actif`, d’affecter les joueurs aux groupes et de surveiller les capacités. Le super-administrateur crée les comptes entraîneurs; chaque entraîneur accède à `/academie/espace`, uniquement à ses groupes, pour publier des créneaux, saisir les présences et ajouter des observations privées ou visibles par la famille.
+Le centre `/admin/academie` permet aux administrateurs de gérer la saison et les textes de la page publique d’inscription, de traiter le cycle `Candidature reçue → Étude → Essai → Accepté → Actif`, d’affecter les joueurs aux groupes et de surveiller les capacités. Le super-administrateur crée les comptes entraîneurs; chaque entraîneur accède à `/academie/espace`, uniquement à ses groupes, pour publier des créneaux, saisir les présences et ajouter des observations privées ou visibles par la famille.
 
-Les comptes Académie utilisent un nom d’utilisateur et un e-mail; les deux permettent de se connecter. Leur session reste distincte de l’administration. Les mots de passe n’ont pas de longueur minimale imposée mais restent hachés avec bcrypt, les cookies sont signés et invalidables, et les photos ainsi que les pièces d’identité privées sont conservées dans MySQL pour survivre aux redéploiements Railway.
+Les comptes Académie utilisent un nom d’utilisateur et un e-mail; les deux permettent de se connecter. Leur session reste distincte de l’administration. Les mots de passe n’ont pas de longueur minimale imposée mais restent hachés avec bcrypt, les cookies sont signés et invalidables, et les photos ainsi que les pièces d’identité privées sont conservées dans MySQL pour survivre aux redéploiements Railway. Les sessions actives sont renouvelées seulement à l’approche de leur expiration, avec une durée absolue maximale de 7 jours pour l’administration et 14 jours pour l’Académie.
+
+Les pages publiques et les contenus éditoriaux utilisent un cache de cinq minutes. Une publication depuis le dashboard invalide immédiatement le contenu concerné. Les documents d’identité et les routes de renouvellement de session restent privés avec `no-store`.
 
 ### Structure MySQL
 
@@ -74,6 +76,7 @@ Les comptes Académie utilisent un nom d’utilisateur et un e-mail; les deux pe
 - `content_imports` : verrou et résultat du remplissage initial unique
 - `admin_audit_log` : journal des opérations de sécurité
 - `academy_accounts` : accès séparés des entraîneurs et responsables légaux
+- `academy_settings` : saison et textes administrables de la page d’inscription
 - `academy_guardians`, `academy_coaches` : profils et coordonnées des adultes
 - `academy_players`, `academy_player_guardians` : jeunes joueurs et liens familiaux
 - `academy_groups`, `academy_enrollments` : groupes U10–U21 et historique saisonnier des dossiers

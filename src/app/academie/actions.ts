@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { requireAdmin, requireSuperAdmin } from "@/lib/admin-auth";
@@ -17,6 +17,7 @@ import {
   enrollmentStatuses,
   ageOnDate,
   saveSessionAttendance,
+  updateAcademyRegistrationSettings,
   updateEnrollment,
 } from "@/lib/academy";
 import {
@@ -169,7 +170,7 @@ export async function createCoachAction(formData: FormData) {
     username: text(formData, "username"), email: text(formData, "email"), name: text(formData, "name"), phone: text(formData, "phone"), password: text(formData, "password"),
     licenseLevel: text(formData, "licenseLevel"), specialty: text(formData, "specialty"),
   });
-  if (!parsed.success) redirect("/admin/academie?error=validation");
+  if (!parsed.success) redirect("/admin/academie?error=academy-settings");
   try { await createCoach(parsed.data, admin.id); } catch (error) { academyError(error, "/admin/academie"); }
   revalidatePath("/admin/academie");
   redirect("/admin/academie?saved=coach");
@@ -266,4 +267,36 @@ export async function registerAdditionalPlayerAction(formData: FormData) {
   }
   revalidatePath(destination);
   redirect(`${destination}?saved=player`);
+}
+
+export async function updateAcademySettingsAction(formData: FormData) {
+  const admin = await requireAdmin();
+  const parsed = z.object({
+    seasonLabel: z.string().trim().regex(/^\d{4}\/\d{4}$/).refine((value) => Number(value.slice(5)) === Number(value.slice(0, 4)) + 1),
+    pageTitle: z.string().trim().min(1).max(180), introText: z.string().trim().min(1).max(1000),
+    registrationQuestion: z.string().trim().min(1).max(255),
+    guardianModeLabel: z.string().trim().min(1).max(120), adultModeLabel: z.string().trim().min(1).max(120),
+    guardianPolicyText: z.string().trim().min(1).max(1000), adultPolicyText: z.string().trim().min(1).max(1000),
+    accountHelpText: z.string().trim().min(1).max(500), eligibilityText: z.string().trim().min(1).max(1000),
+    consentText: z.string().trim().min(1).max(1000), trustDataText: z.string().trim().min(1).max(160),
+    trustFamilyText: z.string().trim().min(1).max(160),
+  }).safeParse({
+    seasonLabel: text(formData, "seasonLabel"), pageTitle: text(formData, "pageTitle"),
+    introText: text(formData, "introText"), registrationQuestion: text(formData, "registrationQuestion"),
+    guardianModeLabel: text(formData, "guardianModeLabel"), adultModeLabel: text(formData, "adultModeLabel"),
+    guardianPolicyText: text(formData, "guardianPolicyText"), adultPolicyText: text(formData, "adultPolicyText"),
+    accountHelpText: text(formData, "accountHelpText"), eligibilityText: text(formData, "eligibilityText"),
+    consentText: text(formData, "consentText"), trustDataText: text(formData, "trustDataText"),
+    trustFamilyText: text(formData, "trustFamilyText"),
+  });
+  if (!parsed.success) redirect("/admin/academie?error=validation");
+  try {
+    await updateAcademyRegistrationSettings(parsed.data, admin.id);
+  } catch (error) {
+    academyError(error, "/admin/academie");
+  }
+  updateTag("academy-registration-settings");
+  revalidatePath("/academie/inscription");
+  revalidatePath("/admin/academie");
+  redirect("/admin/academie?saved=settings");
 }

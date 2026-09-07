@@ -13,6 +13,7 @@ export function AdminNotice({ saved, error }: { saved?: string; error?: string }
   if (error) {
     const messages: Record<string, string> = {
       validation: "Certains champs sont incomplets ou invalides. Vérifiez le formulaire.",
+      "academy-settings": "La saison ou les textes de la page d’inscription sont invalides.",
       duplicate: "Cet identifiant administrateur existe déjà.",
       "last-super-admin": "Le dernier super-administrateur actif doit être conservé.",
       "self-change": "Vous ne pouvez pas suspendre ou supprimer votre propre compte.",

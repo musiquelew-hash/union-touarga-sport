@@ -10,7 +10,7 @@ const errors: Record<string, string> = {
   "schedule-conflict": "Ce créneau chevauche une autre séance du groupe ou de l’entraîneur.",
   "image-upload": "La photo doit être au format JPG, PNG, WebP ou GIF et peser moins de 8 Mo.",
   "age-policy": "Un mineur doit être inscrit par son responsable légal. De 18 à 21 ans, le joueur peut créer son propre compte.",
-  "identity-document": "La carte nationale est obligatoire pour un joueur majeur : PDF, JPG ou PNG, 8 Mo maximum.",
+  "identity-document": "La CIN est obligatoire pour un joueur majeur : PDF, JPG ou PNG, 8 Mo maximum.",
   database: "Le service Académie est momentanément indisponible.",
 };
 

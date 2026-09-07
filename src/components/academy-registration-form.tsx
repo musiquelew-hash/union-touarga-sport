@@ -3,6 +3,7 @@
 import { ArrowRight, FileCheck2, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { registerAcademyPlayerAction } from "@/app/academie/actions";
+import type { AcademyRegistrationSettings } from "@/lib/academy";
 
 type RegistrationType = "guardian" | "adult";
 
@@ -34,7 +35,7 @@ function PlayerFields({ prefix = "", adult = false }: { prefix?: string; adult?:
   );
 }
 
-export function AcademyRegistrationForm() {
+export function AcademyRegistrationForm({ settings }: { settings: AcademyRegistrationSettings }) {
   const [registrationType, setRegistrationType] = useState<RegistrationType>("guardian");
   const [additionalChildren, setAdditionalChildren] = useState<number[]>([]);
 
@@ -49,16 +50,16 @@ export function AcademyRegistrationForm() {
       <input name="additionalCount" type="hidden" value={additionalChildren.length} />
 
       <section className="academy-form-section academy-registration-choice">
-        <div className="academy-form-section__heading"><span>01</span><div><h2>Qui dépose la candidature ?</h2><p>Le parcours dépend de l’âge du joueur au jour de l’inscription.</p></div></div>
+        <div className="academy-form-section__heading"><span>01</span><div><h2>{settings.registrationQuestion}</h2><p>Le parcours dépend de l’âge du joueur au jour de l’inscription.</p></div></div>
         <div className="academy-segmented" role="group" aria-label="Type d’inscription">
-          <button className={registrationType === "guardian" ? "is-active" : ""} onClick={() => switchType("guardian")} type="button">Parent ou tuteur</button>
-          <button className={registrationType === "adult" ? "is-active" : ""} onClick={() => switchType("adult")} type="button">Joueur de 18 à 21 ans</button>
+          <button className={registrationType === "guardian" ? "is-active" : ""} onClick={() => switchType("guardian")} type="button">{settings.guardianModeLabel}</button>
+          <button className={registrationType === "adult" ? "is-active" : ""} onClick={() => switchType("adult")} type="button">{settings.adultModeLabel}</button>
         </div>
-        <p className="academy-policy-note">{registrationType === "guardian" ? "Pour tout joueur mineur, le compte et la candidature sont créés par son responsable légal." : "Le joueur majeur crée son propre compte. Une copie de sa carte nationale est obligatoire."}</p>
+        <p className="academy-policy-note">{registrationType === "guardian" ? settings.guardianPolicyText : settings.adultPolicyText}</p>
       </section>
 
       <section className="academy-form-section">
-        <div className="academy-form-section__heading"><span>02</span><div><h2>{registrationType === "guardian" ? "Compte famille" : "Compte joueur"}</h2><p>La connexion sera possible avec le nom d’utilisateur ou l’e-mail.</p></div></div>
+        <div className="academy-form-section__heading"><span>02</span><div><h2>{registrationType === "guardian" ? "Compte famille" : "Compte joueur"}</h2><p>{settings.accountHelpText}</p></div></div>
         <div className="academy-form-grid">
           {registrationType === "guardian" && <label><span>Nom complet du responsable</span><input name="guardianName" autoComplete="name" required /></label>}
           <label><span>Nom d’utilisateur</span><input name="username" minLength={3} pattern="[-a-zA-Z0-9._]+" autoComplete="username" required /></label>
@@ -70,9 +71,9 @@ export function AcademyRegistrationForm() {
       </section>
 
       <section className="academy-form-section">
-        <div className="academy-form-section__heading"><span>03</span><div><h2>{registrationType === "guardian" ? "Premier enfant" : "Dossier joueur"}</h2><p>Les filles et les garçons peuvent candidater dans toutes les catégories U10 à U21.</p></div></div>
+        <div className="academy-form-section__heading"><span>03</span><div><h2>{registrationType === "guardian" ? "Premier enfant" : "Dossier joueur"}</h2><p>{settings.eligibilityText}</p></div></div>
         <PlayerFields adult={registrationType === "adult"} />
-        {registrationType === "adult" && <label className="academy-identity-upload"><span>Carte nationale <strong>obligatoire</strong></span><input name="identityDocument" type="file" accept="application/pdf,image/jpeg,image/png" required /><small>PDF, JPG ou PNG, 8 Mo maximum. Accessible uniquement à l’administration.</small></label>}
+        {registrationType === "adult" && <label className="academy-identity-upload"><span>CIN <strong>obligatoire</strong></span><input name="identityDocument" type="file" accept="application/pdf,image/jpeg,image/png" required /><small>PDF, JPG ou PNG, 8 Mo maximum. Accessible uniquement à l’administration.</small></label>}
       </section>
 
       {registrationType === "guardian" && additionalChildren.map((child, index) => (
@@ -86,7 +87,7 @@ export function AcademyRegistrationForm() {
 
       <section className="academy-consent-panel">
         <FileCheck2 size={26} />
-        <p>En transmettant ce dossier, vous certifiez l’exactitude des informations et acceptez leur traitement pour la candidature à l’Académie UTS.</p>
+        <p>{settings.consentText}</p>
       </section>
       <button className="academy-button academy-button--primary academy-submit" type="submit">Transmettre {additionalChildren.length + 1 > 1 ? "les candidatures" : "la candidature"} <ArrowRight size={18} /></button>
     </form>

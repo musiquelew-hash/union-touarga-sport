@@ -2,6 +2,7 @@ import { CalendarDays, CheckSquare2, Clock3, LogOut, MapPin, MessageSquareText, 
 import Image from "next/image";
 import { academyLogoutAction, createCoachNoteAction, createTrainingSessionAction, registerAdditionalPlayerAction, saveAttendanceAction } from "@/app/academie/actions";
 import { AcademyNotice } from "@/components/academy-notice";
+import { SessionKeepAlive } from "@/components/session-keepalive";
 import { enrollmentLabels, getCoachDashboard, getGuardianDashboard } from "@/lib/academy";
 import { requireAcademyAccount } from "@/lib/academy-auth";
 
@@ -18,6 +19,7 @@ export default async function AcademyWorkspacePage({ searchParams }: { searchPar
 
   return (
     <div className="academy-shell academy-workspace">
+      <SessionKeepAlive endpoint="/academie/api/session/refresh" />
       <header className="academy-workspace-header">
         <div><p className="academy-eyebrow">Espace {workspaceLabel}</p><h1>Bonjour, {account.displayName}</h1><p>{account.role === "coach" ? "Planifiez les séances et accompagnez la progression de vos groupes." : "Suivez les dossiers, créneaux et retours de l’encadrement."}</p></div>
         <form action={academyLogoutAction}><button className="academy-button academy-button--ghost" type="submit"><LogOut size={17} /> Déconnexion</button></form>

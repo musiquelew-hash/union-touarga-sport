@@ -14,6 +14,8 @@ import { isDatabaseConfigured } from "@/lib/database";
 
 const ADMIN_COOKIE = "uts_admin_session";
 const SESSION_DURATION_SECONDS = 60 * 60 * 8;
+const SESSION_REFRESH_THRESHOLD_SECONDS = 60 * 60 * 2;
+const SESSION_ABSOLUTE_DURATION_SECONDS = 60 * 60 * 24 * 7;
 const MINIMUM_SESSION_SECRET_LENGTH = 32;
 
 function sessionSecret() {
@@ -52,22 +54,29 @@ export async function verifyAdminCredentials(username: string, password: string)
   return authenticateAdmin(username, password);
 }
 
-export async function createAdminSession(admin: AdminUser) {
-  const expiresAt = Math.floor(Date.now() / 1000) + SESSION_DURATION_SECONDS;
+async function setAdminSession(admin: AdminUser, issuedAt: number, absoluteExpiresAt: number) {
+  const now = Math.floor(Date.now() / 1000);
+  const expiresAt = Math.min(now + SESSION_DURATION_SECONDS, absoluteExpiresAt);
   const payload = Buffer.from(JSON.stringify({
     adminUserId: admin.id,
     sessionVersion: admin.sessionVersion,
+    issuedAt,
     expiresAt,
+    absoluteExpiresAt,
   })).toString("base64url");
-  const token = `${payload}.${sign(payload)}`;
   const cookieStore = await cookies();
-  cookieStore.set(ADMIN_COOKIE, token, {
+  cookieStore.set(ADMIN_COOKIE, `${payload}.${sign(payload)}`, {
     httpOnly: true,
-    maxAge: SESSION_DURATION_SECONDS,
+    maxAge: Math.max(0, expiresAt - now),
     path: "/admin",
     sameSite: "strict",
     secure: process.env.NODE_ENV === "production",
   });
+}
+
+export async function createAdminSession(admin: AdminUser) {
+  const issuedAt = Math.floor(Date.now() / 1000);
+  await setAdminSession(admin, issuedAt, issuedAt + SESSION_ABSOLUTE_DURATION_SECONDS);
 }
 
 export async function clearAdminSession() {
@@ -93,22 +102,30 @@ export async function getAdminSession() {
     const session = JSON.parse(Buffer.from(payload, "base64url").toString("utf8")) as {
       adminUserId?: number;
       sessionVersion?: number;
+      issuedAt?: number;
       expiresAt?: number;
+      absoluteExpiresAt?: number;
     };
-    if (
-      !session.adminUserId ||
-      !session.sessionVersion ||
-      !session.expiresAt ||
-      session.expiresAt <= Math.floor(Date.now() / 1000)
-    ) {
-      return null;
-    }
+    const now = Math.floor(Date.now() / 1000);
+    if (!session.adminUserId || !session.sessionVersion || !session.expiresAt || session.expiresAt <= now) return null;
+    const issuedAt = session.issuedAt || session.expiresAt - SESSION_DURATION_SECONDS;
+    const absoluteExpiresAt = session.absoluteExpiresAt || issuedAt + SESSION_ABSOLUTE_DURATION_SECONDS;
+    if (absoluteExpiresAt <= now) return null;
     const admin = await getActiveAdminUserById(session.adminUserId);
     if (!admin || admin.sessionVersion !== session.sessionVersion) return null;
-    return { ...admin, expiresAt: session.expiresAt };
+    return { ...admin, issuedAt, expiresAt: session.expiresAt, absoluteExpiresAt };
   } catch {
     return null;
   }
+}
+
+export async function refreshAdminSession() {
+  const session = await getAdminSession();
+  if (!session) return false;
+  if (session.expiresAt - Math.floor(Date.now() / 1000) <= SESSION_REFRESH_THRESHOLD_SECONDS) {
+    await setAdminSession(session, session.issuedAt, session.absoluteExpiresAt);
+  }
+  return true;
 }
 
 export async function requireAdmin() {
