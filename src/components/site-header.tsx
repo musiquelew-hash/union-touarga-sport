@@ -1,18 +1,18 @@
 "use client";
 
-import { CalendarDays, Menu, X } from "lucide-react";
+import { CalendarDays, ChevronDown, Menu, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { Brand } from "@/components/brand";
+import type { ClubTeam } from "@/lib/sports-hub";
 
 const navigation = [
   { href: "/", label: "Accueil" },
+  { href: "/medias", label: "Actualités" },
   { href: "/matchs", label: "Matchs" },
-  { href: "/equipe", label: "Équipe" },
   { href: "/classement", label: "Classement" },
   { href: "/club", label: "Le club" },
-  { href: "/medias", label: "Médias" },
   { href: "/academie/inscription", label: "Académie" },
 ];
 
@@ -20,10 +20,12 @@ export function SiteHeader({
   stripPrimary = "Rabat · Depuis 1969",
   stripSecondary = "Union · Formation · Ambition",
   crestUrl,
+  teams,
 }: {
   stripPrimary?: string;
   stripSecondary?: string;
   crestUrl?: string;
+  teams: ClubTeam[];
 }) {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
@@ -40,7 +42,7 @@ export function SiteHeader({
         <div className="shell site-header__inner">
           <Brand compact crestOnly crestUrl={crestUrl} />
           <nav className="desktop-nav" aria-label="Navigation principale">
-            {navigation.map((item) => (
+            {navigation.slice(0, 2).map((item) => (
               <Link
                 key={item.href}
                 className={pathname === item.href ? "is-active" : undefined}
@@ -48,6 +50,18 @@ export function SiteHeader({
               >
                 {item.label}
               </Link>
+            ))}
+            <div className="desktop-nav__teams">
+              <Link className={pathname.startsWith("/equipes") ? "is-active" : undefined} href="/equipes">
+                Équipes <ChevronDown aria-hidden="true" size={14} />
+              </Link>
+              <div className="desktop-nav__team-menu">
+                <div><small>Le club sur tous les terrains</small><strong>Nos équipes</strong></div>
+                {teams.map((team) => <Link href={`/equipes/${team.slug}`} key={team.id}><span>{team.categoryLabel}</span><strong>{team.shortName}</strong></Link>)}
+              </div>
+            </div>
+            {navigation.slice(2).map((item) => (
+              <Link key={item.href} className={pathname === item.href ? "is-active" : undefined} href={item.href}>{item.label}</Link>
             ))}
           </nav>
           <Link className="header-action" href="/matchs">
@@ -71,7 +85,7 @@ export function SiteHeader({
           aria-label="Navigation mobile"
         >
           <div className="shell mobile-nav__inner">
-            {navigation.map((item, index) => (
+            {navigation.slice(0, 2).map((item, index) => (
               <Link
                 key={item.href}
                 className={pathname === item.href ? "is-active" : undefined}
@@ -81,6 +95,10 @@ export function SiteHeader({
                 <span>0{index + 1}</span>
                 {item.label}
               </Link>
+            ))}
+            <div className="mobile-nav__teams"><span>03</span><strong>Équipes</strong>{teams.map((team) => <Link href={`/equipes/${team.slug}`} key={team.id} onClick={() => setIsOpen(false)}>{team.categoryLabel}</Link>)}</div>
+            {navigation.slice(2).map((item, index) => (
+              <Link key={item.href} className={pathname === item.href ? "is-active" : undefined} href={item.href} onClick={() => setIsOpen(false)}><span>0{index + 4}</span>{item.label}</Link>
             ))}
           </div>
         </nav>

@@ -4,8 +4,8 @@ import { Brand } from "@/components/brand";
 
 const footerLinks = [
   { href: "/matchs", label: "Matchs" },
-  { href: "/equipe", label: "Équipe première" },
-  { href: "/classement", label: "Classement" },
+  { href: "/equipes", label: "Toutes les équipes" },
+  { href: "/classement", label: "Classements" },
   { href: "/club", label: "Histoire du club" },
   { href: "/medias", label: "Médias" },
 ];

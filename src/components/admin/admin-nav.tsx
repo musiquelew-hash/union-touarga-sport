@@ -10,6 +10,7 @@ import {
   Menu,
   Newspaper,
   ShieldCheck,
+  Trophy,
   UserCog,
   UserRoundCog,
   Users,
@@ -24,6 +25,7 @@ import { logoutAction } from "@/app/admin/actions";
 const items = [
   { href: "/admin", label: "Vue d’ensemble", icon: LayoutDashboard },
   { href: "/admin/contenu", label: "Contenu du site", icon: FileText },
+  { href: "/admin/sport", label: "Centre sportif", icon: Trophy },
   { href: "/admin/gestion/player", label: "Joueurs", icon: Users },
   { href: "/admin/gestion/staff", label: "Staff", icon: UserRoundCog },
   { href: "/admin/gestion/news", label: "Actualités", icon: Newspaper },

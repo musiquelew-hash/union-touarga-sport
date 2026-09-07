@@ -86,7 +86,7 @@ export type TeamSummary = {
 export type MatchSummary = {
   id: number;
   timestamp: number;
-  status: "scheduled" | "finished";
+  status: "scheduled" | "live" | "finished" | "postponed" | "cancelled";
   competition: string;
   season: string;
   round: number | null;
@@ -107,6 +107,7 @@ export type TeamSummarySmall = {
 
 export type PlayerSummary = {
   id: number;
+  teamId?: number;
   name: string;
   shortName: string;
   number: string | null;
@@ -125,6 +126,7 @@ export type PlayerSummary = {
 
 export type StaffSummary = {
   id: number;
+  teamId?: number;
   name: string;
   role: string;
   department: "Technique" | "Médical" | "Direction" | "Autre";

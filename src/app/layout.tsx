@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Barlow_Condensed, Manrope } from "next/font/google";
 import { SiteShell } from "@/components/site-shell";
 import { getSiteContent } from "@/lib/site-content";
+import { listClubTeams } from "@/lib/sports-hub";
 import "./globals.css";
 
 export const revalidate = 300;
@@ -39,7 +40,7 @@ export const metadata: Metadata = {
 };
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {
-  const content = await getSiteContent();
+  const [content, teams] = await Promise.all([getSiteContent(), listClubTeams()]);
 
   return (
     <html
@@ -53,6 +54,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
           stripSecondary={content.stripSecondary}
           footerStatement={content.footerStatement}
           crestWhiteUrl={content.crestWhiteUrl}
+          teams={teams}
         >
           {children}
         </SiteShell>

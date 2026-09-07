@@ -33,6 +33,15 @@ import { ImageUploadError, resolveImageField } from "@/lib/media-assets";
 import { updateAcademyRegistrationSettings, type AcademyRegistrationSettings } from "@/lib/academy";
 import { defaultSiteContent, type SiteContent } from "@/lib/site-content";
 import {
+  deleteSportsRecord,
+  saveClubTeam,
+  saveSportsMatch,
+  saveSportsStanding,
+  sportsProviders,
+  sportsTeamTypes,
+  syncClubTeam,
+} from "@/lib/sports-hub";
+import {
   type MediaSummary,
   type NewsSummary,
   type PlayerSummary,
@@ -112,9 +121,175 @@ async function persist(task: () => Promise<void>, destination: string) {
     console.error("[ADMIN] Écriture impossible", error);
   }
 
-  if (failed) redirect(`${destination}?error=database`);
+  const separator = destination.includes("?") ? "&" : "?";
+  if (failed) redirect(`${destination}${separator}error=database`);
   publicPaths();
-  redirect(`${destination}?saved=1`);
+  redirect(`${destination}${separator}saved=1`);
+}
+
+const sportsTeamSchema = z.object({
+  id: z.number().int().positive().optional(),
+  slug: z.string().trim().min(2).max(80).regex(/^[a-z0-9-]+$/),
+  name: requiredText,
+  shortName: requiredText,
+  categoryLabel: requiredText,
+  type: z.enum(sportsTeamTypes),
+  description: z.string().trim().min(1).max(3000),
+  heroImageUrl: imagePath,
+  apiProvider: z.enum(sportsProviders),
+  apiTeamId: optionalText.transform((value) => value || null),
+  apiTournamentId: optionalText.transform((value) => value || null),
+  apiLeagueId: optionalText.transform((value) => value || null),
+  primary: z.boolean(),
+  published: z.boolean(),
+  sortOrder: z.number().int(),
+});
+
+export async function saveSportsTeamAction(formData: FormData) {
+  const admin = await requireAdmin();
+  const images = await uploadedImages(formData, ["heroImageUrl"] as const, admin.id, "/admin/sport");
+  const id = numberOrNull(formData, "id");
+  const parsed = sportsTeamSchema.safeParse({
+    id: id || undefined,
+    slug: text(formData, "slug").toLowerCase(),
+    name: text(formData, "name"),
+    shortName: text(formData, "shortName"),
+    categoryLabel: text(formData, "categoryLabel"),
+    type: text(formData, "type"),
+    description: text(formData, "description"),
+    heroImageUrl: images.heroImageUrl,
+    apiProvider: text(formData, "apiProvider"),
+    apiTeamId: text(formData, "apiTeamId"),
+    apiTournamentId: text(formData, "apiTournamentId"),
+    apiLeagueId: text(formData, "apiLeagueId"),
+    primary: formData.get("primary") === "on",
+    published: published(formData),
+    sortOrder: numberOr(formData, "sortOrder", 0),
+  });
+  if (!parsed.success) redirect("/admin/sport?error=validation");
+
+  return persist(
+    () => saveClubTeam(parsed.data, admin.id),
+    `/admin/sport${id ? `?team=${id}` : ""}`,
+  );
+}
+
+const sportsMatchSchema = z.object({
+  key: z.string().trim().max(160).optional(),
+  teamId: z.number().int().positive(),
+  startsAt: z.string().trim().min(16).max(19)
+    .refine((value) => Number.isFinite(Date.parse(`${value}Z`)))
+    .transform((value) => `${value.replace("T", " ")}${value.length === 16 ? ":00" : ""}`),
+  status: z.enum(["scheduled", "live", "finished", "postponed", "cancelled"]),
+  competition: requiredText,
+  season: z.string().trim().min(4).max(20),
+  roundLabel: optionalText.transform((value) => value || null),
+  homeName: requiredText,
+  homeShortName: requiredText,
+  homeCode: z.string().trim().min(2).max(12),
+  homeBadgeUrl: optionalImagePath.transform((value) => value || null),
+  awayName: requiredText,
+  awayShortName: requiredText,
+  awayCode: z.string().trim().min(2).max(12),
+  awayBadgeUrl: optionalImagePath.transform((value) => value || null),
+  homeScore: nullableInteger,
+  awayScore: nullableInteger,
+  venue: optionalText.transform((value) => value || null),
+  reportUrl: optionalText.refine((value) => !value || URL.canParse(value)).transform((value) => value || null),
+  featured: z.boolean(),
+  published: z.boolean(),
+});
+
+export async function saveSportsMatchAction(formData: FormData) {
+  const admin = await requireAdmin();
+  const teamId = numberOrNull(formData, "teamId");
+  const images = await uploadedImages(formData, ["homeBadgeUrl", "awayBadgeUrl"] as const, admin.id, "/admin/sport");
+  const parsed = sportsMatchSchema.safeParse({
+    key: text(formData, "recordKey") || undefined,
+    teamId,
+    startsAt: text(formData, "startsAt"),
+    status: text(formData, "status"),
+    competition: text(formData, "competition"),
+    season: text(formData, "season"),
+    roundLabel: text(formData, "roundLabel"),
+    homeName: text(formData, "homeName"),
+    homeShortName: text(formData, "homeShortName") || text(formData, "homeName"),
+    homeCode: text(formData, "homeCode").toUpperCase(),
+    homeBadgeUrl: images.homeBadgeUrl,
+    awayName: text(formData, "awayName"),
+    awayShortName: text(formData, "awayShortName") || text(formData, "awayName"),
+    awayCode: text(formData, "awayCode").toUpperCase(),
+    awayBadgeUrl: images.awayBadgeUrl,
+    homeScore: numberOrNull(formData, "homeScore"),
+    awayScore: numberOrNull(formData, "awayScore"),
+    venue: text(formData, "venue"),
+    reportUrl: text(formData, "reportUrl"),
+    featured: formData.get("featured") === "on",
+    published: published(formData),
+  });
+  if (!parsed.success || !teamId) redirect("/admin/sport?error=validation");
+  return persist(() => saveSportsMatch(parsed.data, admin.id), `/admin/sport?team=${teamId}`);
+}
+
+const sportsStandingSchema = z.object({
+  key: z.string().trim().max(180).optional(),
+  teamId: z.number().int().positive(),
+  season: z.string().trim().min(4).max(20),
+  position: z.number().int().positive(),
+  clubName: requiredText,
+  clubShortName: requiredText,
+  clubBadgeUrl: optionalImagePath.transform((value) => value || null),
+  played: z.number().int().nonnegative(),
+  won: z.number().int().nonnegative(),
+  drawn: z.number().int().nonnegative(),
+  lost: z.number().int().nonnegative(),
+  goalsFor: z.number().int().nonnegative(),
+  goalsAgainst: z.number().int().nonnegative(),
+  points: z.number().int(),
+  zone: optionalText.transform((value) => value || null),
+  published: z.boolean(),
+});
+
+export async function saveSportsStandingAction(formData: FormData) {
+  const admin = await requireAdmin();
+  const teamId = numberOrNull(formData, "teamId");
+  const images = await uploadedImages(formData, ["clubBadgeUrl"] as const, admin.id, "/admin/sport");
+  const parsed = sportsStandingSchema.safeParse({
+    key: text(formData, "recordKey") || undefined,
+    teamId,
+    season: text(formData, "season"),
+    position: numberOr(formData, "position", 1),
+    clubName: text(formData, "clubName"),
+    clubShortName: text(formData, "clubShortName") || text(formData, "clubName"),
+    clubBadgeUrl: images.clubBadgeUrl,
+    played: numberOr(formData, "played", 0),
+    won: numberOr(formData, "won", 0),
+    drawn: numberOr(formData, "drawn", 0),
+    lost: numberOr(formData, "lost", 0),
+    goalsFor: numberOr(formData, "goalsFor", 0),
+    goalsAgainst: numberOr(formData, "goalsAgainst", 0),
+    points: numberOr(formData, "points", 0),
+    zone: text(formData, "zone"),
+    published: published(formData),
+  });
+  if (!parsed.success || !teamId) redirect("/admin/sport?error=validation");
+  return persist(() => saveSportsStanding(parsed.data, admin.id), `/admin/sport?team=${teamId}`);
+}
+
+export async function deleteSportsRecordAction(formData: FormData) {
+  await requireAdmin();
+  const teamId = numberOrNull(formData, "teamId");
+  const kind = z.enum(["match", "standing"]).safeParse(text(formData, "kind"));
+  const key = z.string().trim().min(1).max(180).safeParse(text(formData, "recordKey"));
+  if (!teamId || !kind.success || !key.success) redirect("/admin/sport?error=validation");
+  return persist(() => deleteSportsRecord(kind.data, key.data), `/admin/sport?team=${teamId}`);
+}
+
+export async function syncSportsTeamAction(formData: FormData) {
+  await requireAdmin();
+  const teamId = numberOrNull(formData, "teamId");
+  if (!teamId) redirect("/admin/sport?error=validation");
+  return persist(() => syncClubTeam(teamId).then(() => undefined), `/admin/sport?team=${teamId}`);
 }
 
 export async function loginAction(formData: FormData) {
@@ -286,6 +461,7 @@ export async function saveSiteContentAction(formData: FormData) {
 
 const playerSchema = z.object({
   id: z.number().int().positive(),
+  teamId: z.number().int().positive(),
   name: requiredText,
   shortName: requiredText,
   number: optionalText.transform((value) => value || null),
@@ -307,6 +483,7 @@ export async function savePlayerAction(formData: FormData) {
   const images = await uploadedImages(formData, ["imageUrl"] as const, admin.id, collectionRoutes.player);
   const parsed = playerSchema.safeParse({
     id: numberOr(formData, "id", generatedNumericId()),
+    teamId: numberOr(formData, "teamId", 1),
     name: text(formData, "name"),
     shortName: text(formData, "shortName") || text(formData, "name"),
     number: text(formData, "number"),
@@ -340,6 +517,7 @@ export async function savePlayerAction(formData: FormData) {
 
 const staffSchema = z.object({
   id: z.number().int().positive(),
+  teamId: z.number().int().positive(),
   name: requiredText,
   role: requiredText,
   department: z.enum(["Technique", "Médical", "Direction", "Autre"]),
@@ -351,6 +529,7 @@ export async function saveStaffAction(formData: FormData) {
   const images = await uploadedImages(formData, ["imageUrl"] as const, admin.id, collectionRoutes.staff);
   const parsed = staffSchema.safeParse({
     id: numberOr(formData, "id", generatedNumericId()),
+    teamId: numberOr(formData, "teamId", 1),
     name: text(formData, "name"),
     role: text(formData, "role"),
     department: text(formData, "department"),

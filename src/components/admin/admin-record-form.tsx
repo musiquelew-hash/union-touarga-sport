@@ -10,6 +10,7 @@ import {
 import { AdminImageField } from "@/components/admin/admin-image-field";
 import { AdminSubmitButton } from "@/components/admin/admin-submit-button";
 import type { CmsKind, CmsRecord } from "@/lib/relational-cms-db";
+import type { ClubTeam } from "@/lib/sports-hub";
 import type {
   MediaSummary,
   NewsSummary,
@@ -92,10 +93,19 @@ function utcDateTime(timestamp?: number | null) {
   return timestamp ? new Date(timestamp * 1000).toISOString().slice(0, 16) : "";
 }
 
-function PlayerFields({ data }: { data?: PlayerSummary }) {
+function TeamField({ teams, value }: { teams: ClubTeam[]; value?: number }) {
+  return (
+    <SelectField label="Équipe / catégorie" name="teamId" value={String(value || teams.find((team) => team.primary)?.id || 1)}>
+      {teams.map((team) => <option key={team.id} value={team.id}>{team.categoryLabel} · {team.shortName}</option>)}
+    </SelectField>
+  );
+}
+
+function PlayerFields({ data, teams }: { data?: PlayerSummary; teams: ClubTeam[] }) {
   return (
     <>
       {data && <input type="hidden" name="id" value={data.id} />}
+      <TeamField teams={teams} value={data?.teamId} />
       <InputField label="Nom complet" name="name" value={data?.name} required />
       <InputField label="Nom affiché" name="shortName" value={data?.shortName} />
       <SelectField label="Poste" name="position" value={data?.position || "Joueur"}>
@@ -123,10 +133,11 @@ function PlayerFields({ data }: { data?: PlayerSummary }) {
   );
 }
 
-function StaffFields({ data }: { data?: StaffSummary }) {
+function StaffFields({ data, teams }: { data?: StaffSummary; teams: ClubTeam[] }) {
   return (
     <>
       {data && <input type="hidden" name="id" value={data.id} />}
+      <TeamField teams={teams} value={data?.teamId} />
       <InputField label="Nom complet" name="name" value={data?.name} required />
       <InputField label="Fonction" name="role" value={data?.role} required />
       <SelectField label="Département" name="department" value={data?.department || "Technique"}>
@@ -166,10 +177,10 @@ function MediaFields({ data }: { data?: MediaSummary }) {
   );
 }
 
-function Fields({ kind, data }: { kind: CmsKind; data?: RecordData }) {
+function Fields({ kind, data, teams }: { kind: CmsKind; data?: RecordData; teams: ClubTeam[] }) {
   switch (kind) {
-    case "player": return <PlayerFields data={data as PlayerSummary | undefined} />;
-    case "staff": return <StaffFields data={data as StaffSummary | undefined} />;
+    case "player": return <PlayerFields data={data as PlayerSummary | undefined} teams={teams} />;
+    case "staff": return <StaffFields data={data as StaffSummary | undefined} teams={teams} />;
     case "news": return <NewsFields data={data as NewsSummary | undefined} />;
     case "media": return <MediaFields data={data as MediaSummary | undefined} />;
   }
@@ -196,12 +207,12 @@ function summary(kind: CmsKind, data: RecordData) {
   }
 }
 
-function EditorForm({ kind, record }: { kind: CmsKind; record?: CmsRecord<RecordData> }) {
+function EditorForm({ kind, record, teams }: { kind: CmsKind; record?: CmsRecord<RecordData>; teams: ClubTeam[] }) {
   return (
     <form action={actions[kind]} className="admin-record-form">
       {record && <input type="hidden" name="recordKey" value={record.key} />}
       <div className="admin-form-grid">
-        <Fields kind={kind} data={record?.data} />
+        <Fields kind={kind} data={record?.data} teams={teams} />
         <InputField label="Ordre d’affichage" name="sortOrder" value={record?.sortOrder || 0} type="number" />
         <label className="admin-checkbox">
           <input name="published" type="checkbox" defaultChecked={record?.published ?? true} />
@@ -217,19 +228,19 @@ function EditorForm({ kind, record }: { kind: CmsKind; record?: CmsRecord<Record
   );
 }
 
-export function AdminNewRecord({ kind }: { kind: CmsKind }) {
+export function AdminNewRecord({ kind, teams }: { kind: CmsKind; teams: ClubTeam[] }) {
   return (
     <section className="admin-panel admin-new-record">
       <div className="admin-panel__heading">
         <div><span>+</span><h2>Nouvel élément</h2></div>
         <p>Il sera enregistré dans le dashboard et publié sur le site.</p>
       </div>
-      <EditorForm kind={kind} />
+      <EditorForm kind={kind} teams={teams} />
     </section>
   );
 }
 
-export function AdminRecordEditor({ kind, record }: { kind: CmsKind; record: CmsRecord<RecordData> }) {
+export function AdminRecordEditor({ kind, record, teams }: { kind: CmsKind; record: CmsRecord<RecordData>; teams: ClubTeam[] }) {
   const item = summary(kind, record.data);
   return (
     <details className="admin-record">
@@ -242,7 +253,7 @@ export function AdminRecordEditor({ kind, record }: { kind: CmsKind; record: Cms
         <span className="admin-record__status">{record.published ? "Publié" : "Masqué"}</span>
       </summary>
       <div className="admin-record__body">
-        <EditorForm kind={kind} record={record} />
+        <EditorForm kind={kind} record={record} teams={teams} />
         <form action={deleteRecordAction} className="admin-delete-form">
           <input type="hidden" name="kind" value={kind} />
           <input type="hidden" name="recordKey" value={record.key} />

@@ -1,4 +1,4 @@
-import { ArrowRight, GraduationCap, LayoutGrid, RefreshCw } from "lucide-react";
+import { ArrowRight, GraduationCap, LayoutGrid, RefreshCw, Trophy } from "lucide-react";
 import Link from "next/link";
 import { runInitialContentImportAction } from "@/app/admin/actions";
 import { AdminNotice } from "@/components/admin/admin-notice";
@@ -79,6 +79,17 @@ export default async function AdminDashboardPage({
         </div>
         <Link className="admin-button admin-button--secondary" href="/admin/academie">
           Piloter l’académie <ArrowRight aria-hidden="true" size={17} />
+        </Link>
+      </section>
+
+      <section className="admin-panel admin-source-panel">
+        <div className="admin-panel__icon"><Trophy aria-hidden="true" size={24} /></div>
+        <div>
+          <h2>Toutes les équipes, un seul centre</h2>
+          <p>Équipe masculine, féminine et formation disposent de leurs calendriers, résultats, classements et sources API.</p>
+        </div>
+        <Link className="admin-button admin-button--secondary" href="/admin/sport">
+          Ouvrir le centre sportif <ArrowRight aria-hidden="true" size={17} />
         </Link>
       </section>
 

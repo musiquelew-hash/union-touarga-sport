@@ -7,6 +7,7 @@ import { PlayerCard } from "@/components/player-card";
 import { StandingsTable } from "@/components/standings-table";
 import { formatShortDate, formatTime } from "@/lib/format";
 import { getSiteContent } from "@/lib/site-content";
+import { listClubTeams } from "@/lib/sports-hub";
 import { getUtsData, UTS_TEAM_ID } from "@/lib/uts-data";
 
 function getHomeStandings(rows: Awaited<ReturnType<typeof getUtsData>>["standings"]) {
@@ -32,42 +33,39 @@ function getFeaturedPlayers(players: Awaited<ReturnType<typeof getUtsData>>["pla
 }
 
 export default async function Home() {
-  const [data, content] = await Promise.all([getUtsData(), getSiteContent()]);
+  const [data, content, teams] = await Promise.all([getUtsData(), getSiteContent(), listClubTeams()]);
   const nextMatch = data.nextMatch;
   const standings = getHomeStandings(data.standings);
   const featuredPlayers = getFeaturedPlayers(data.players);
+  const leadStory = data.news[0];
 
   return (
     <>
       <section className="home-hero">
         <Image
           className="home-hero__image"
-          src={content.homeHeroImageUrl}
-          alt={content.homeHeroImageAlt}
+          src={leadStory?.imageUrl || content.homeHeroImageUrl}
+          alt={leadStory?.imageAlt || content.homeHeroImageAlt}
           fill
-          priority
+          loading="eager"
           sizes="100vw"
         />
         <div className="shell home-hero__inner">
           <div className="home-hero__content">
             <div className="home-hero__meta">
-              <span>Équipe première · Botola Pro</span>
+              <span>Le média officiel de l’Union Touarga Sport</span>
             </div>
-            <p className="home-hero__kicker">{content.heroKicker}</p>
+            <p className="home-hero__kicker">{leadStory ? "À la une" : content.heroKicker}</p>
             <h1>
-              {content.heroTitleTop}
-              <span>{content.heroTitleBottom}</span>
+              {leadStory?.title || content.heroTitleTop}
+              {!leadStory && <span>{content.heroTitleBottom}</span>}
             </h1>
             <p className="home-hero__lead">
-              <strong>{content.heroLeadStrong}</strong> {content.heroLead}
+              {leadStory ? leadStory.summary : <><strong>{content.heroLeadStrong}</strong> {content.heroLead}</>}
             </p>
             <div className="home-hero__actions">
-              <Link className="button button--yellow" href="/matchs">
-                Voir les matchs <ArrowRight aria-hidden="true" size={18} />
-              </Link>
-              <Link className="button button--outline" href="/club">
-                Découvrir le club <ArrowUpRight aria-hidden="true" size={18} />
-              </Link>
+              {leadStory ? <a className="button button--yellow" href={leadStory.url} target="_blank" rel="noreferrer">Lire l’actualité <ArrowUpRight aria-hidden="true" size={18} /></a> : <Link className="button button--yellow" href="/matchs">Voir les matchs <ArrowRight aria-hidden="true" size={18} /></Link>}
+              <Link className="button button--outline" href="/equipes">Toutes nos équipes <ArrowRight aria-hidden="true" size={18} /></Link>
             </div>
           </div>
           {nextMatch && (
@@ -119,6 +117,24 @@ export default async function Home() {
           )}
         </div>
       </div>
+
+      <section className="home-team-universes">
+        <div className="shell">
+          <div className="section-heading section-heading--light">
+            <div><span className="eyebrow eyebrow--yellow">Un seul club · Tous les terrains</span><h2>Les équipes de Touarga</h2></div>
+            <Link className="button button--outline" href="/equipes">Explorer les équipes <ArrowRight size={17} /></Link>
+          </div>
+          <div className="home-team-universes__grid">
+            {teams.slice(0, 5).map((team, index) => (
+              <Link className={`home-team-universe${index === 0 ? " home-team-universe--lead" : ""}`} href={`/equipes/${team.slug}`} key={team.id}>
+                <Image src={team.heroImageUrl} alt="" fill sizes={index === 0 ? "(max-width: 800px) 100vw, 48vw" : "(max-width: 800px) 50vw, 24vw"} />
+                <span>0{index + 1}</span>
+                <div><small>{team.categoryLabel}</small><strong>{team.name}</strong><ArrowUpRight size={19} /></div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
 
       <section className="section home-match-section">
         <div className="shell">
@@ -227,7 +243,7 @@ export default async function Home() {
           </div>
           {data.news.length > 0 ? (
             <div className="news-grid home-news-grid">
-              {data.news.slice(0, 3).map((article) => (
+              {data.news.slice(leadStory ? 1 : 0, leadStory ? 4 : 3).map((article) => (
                 <NewsCard key={article.id} article={article} />
               ))}
             </div>

@@ -4,9 +4,9 @@ Site moderne et responsive consacré à l'Union Touarga Sport. Les matchs et le 
 
 ## Fonctionnalités
 
-- Calendrier et résultats de l'équipe première
-- Classement de la Botola Pro
-- Effectif classé par poste et staff par département
+- Équipes masculine, féminine et formation configurables depuis le dashboard
+- Calendriers, résultats et classements multi-catégories avec synchronisation API et corrections manuelles verrouillées
+- Effectifs et staffs rattachés à chaque équipe, classés par poste et département
 - Actualités et galerie de photos officielles, avec textes, résumés et images modifiables
 - Histoire et identité du club
 - Dashboard administrateur pour gérer les textes, joueurs, staff, actualités, médias et tous les visuels globaux
@@ -71,6 +71,11 @@ Les pages publiques et les contenus éditoriaux utilisent un cache de cinq minut
 - `media_assets` : fichiers image importés depuis le dashboard
 - `site_content` : textes, liens et visuels globaux du site
 - `club_milestones` : jalons historiques ordonnés
+- `sports_teams` : équipes publiées, identité visuelle et configuration des fournisseurs API
+- `sports_competitions` : compétitions et saisons par équipe
+- `sports_matches` : calendrier et résultats issus des API ou saisis dans le dashboard
+- `sports_standings` : classements synchronisés ou administrés manuellement
+- `sports_sync_log` : historique des synchronisations sportives et erreurs fournisseurs
 - `admin_users` : comptes, rôles, état et version de session
 - `content_imports` : verrou et résultat du remplissage initial unique
 - `admin_audit_log` : journal des opérations de sécurité
@@ -83,7 +88,7 @@ Les pages publiques et les contenus éditoriaux utilisent un cache de cinq minut
 - `academy_player_notes` : observations sportives, médicales, administratives ou comportementales
 - `schema_migrations` : migrations déjà appliquées
 
-Il n'existe volontairement aucune table de matchs ou de classement : ces deux rubriques restent alimentées par les APIs sportives publiques.
+Les données sportives sont conservées en MySQL pour assurer la continuité du site. Les lignes corrigées depuis le dashboard sont verrouillées et prioritaires sur les synchronisations suivantes.
 
 Sans MySQL, les matchs et le classement restent disponibles via les APIs publiques, mais les rubriques éditoriales affichent un état vide. L'administration signale la base hors ligne et refuse proprement les écritures.
 

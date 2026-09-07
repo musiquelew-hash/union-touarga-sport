@@ -26,6 +26,7 @@ export type CmsCategory<T> = {
 type RelationalRow = RowDataPacket & {
   cms_id: number;
   record_key: string;
+  team_id?: number;
   player_id?: number;
   staff_id?: number;
   article_id?: number;
@@ -163,6 +164,7 @@ function mapData(kind: CmsKind, row: RelationalRow) {
     case "player":
       return {
         id: Number(row.player_id),
+        teamId: Number(row.team_id || 1),
         name: row.full_name || "",
         shortName: row.short_name || row.full_name || "",
         number: row.shirt_number || null,
@@ -181,6 +183,7 @@ function mapData(kind: CmsKind, row: RelationalRow) {
     case "staff":
       return {
         id: Number(row.staff_id),
+        teamId: Number(row.team_id || 1),
         name: row.full_name || "",
         role: row.role_title || "",
         department: row.department || "Autre",
@@ -266,13 +269,13 @@ async function writeCmsRecord<T>(
         execute,
         tableByKind.player,
         [
-          "record_key", "player_id", "full_name", "short_name", "shirt_number", "position", "age",
+          "record_key", "team_id", "player_id", "full_name", "short_name", "shirt_number", "position", "age",
           "height_cm", "preferred_foot", "nationality", "country_code", "image_url", "appearances",
           "goals", "assists", "rating", "is_published", "sort_order", "source_name",
           "updated_by_admin_id", "sync_with_source",
         ],
         [
-          record.key, data.id, data.name, data.shortName, data.number, data.position, data.age, data.height,
+          record.key, data.teamId || 1, data.id, data.name, data.shortName, data.number, data.position, data.age, data.height,
           data.foot, data.nationality, data.countryCode, data.imageUrl, data.appearances, data.goals,
           data.assists, data.rating, record.published, record.sortOrder, sourceName, actorAdminId, syncWithSource,
         ],
@@ -283,11 +286,11 @@ async function writeCmsRecord<T>(
         execute,
         tableByKind.staff,
         [
-          "record_key", "staff_id", "full_name", "role_title", "department", "image_url",
+          "record_key", "team_id", "staff_id", "full_name", "role_title", "department", "image_url",
           "is_published", "sort_order", "source_name", "updated_by_admin_id", "sync_with_source",
         ],
         [
-          record.key, data.id, data.name, data.role, data.department, data.imageUrl, record.published,
+          record.key, data.teamId || 1, data.id, data.name, data.role, data.department, data.imageUrl, record.published,
           record.sortOrder, sourceName, actorAdminId, syncWithSource,
         ],
         mode,

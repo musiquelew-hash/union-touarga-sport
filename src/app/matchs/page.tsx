@@ -2,33 +2,39 @@ import type { Metadata } from "next";
 import { CalendarClock, Trophy } from "lucide-react";
 import { MatchCard } from "@/components/match-card";
 import { PageHeading } from "@/components/page-heading";
+import { TeamSwitcher } from "@/components/team-switcher";
 import { getSiteContent } from "@/lib/site-content";
-import { getUtsData } from "@/lib/uts-data";
+import { getTeamSportsData, listClubTeams } from "@/lib/sports-hub";
 
 export const metadata: Metadata = {
   title: "Matchs et résultats",
   description: "Calendrier et derniers résultats de l'Union Touarga Sport.",
 };
 
-export default async function MatchesPage() {
-  const [data, content] = await Promise.all([getUtsData(), getSiteContent()]);
+export default async function MatchesPage({ searchParams }: { searchParams: Promise<{ equipe?: string }> }) {
+  const [params, teams, content] = await Promise.all([searchParams, listClubTeams(), getSiteContent()]);
+  const activeSlug = teams.some((team) => team.slug === params.equipe) ? params.equipe! : teams.find((team) => team.primary)?.slug || teams[0]?.slug || "masculine";
+  const data = await getTeamSportsData(activeSlug);
+  if (!data) return null;
 
   return (
     <>
       <PageHeading
-        eyebrow="Saison en cours"
+        eyebrow={data.team.categoryLabel}
         title="Matchs & résultats"
-        intro="Les prochaines affiches et les derniers scores de l'UTS, synchronisés automatiquement au rythme des compétitions."
+        intro={`Le calendrier de ${data.team.shortName}, alimenté par l’API sportive ou directement par le club.`}
         image={content.matchesHeaderImageUrl}
         imageAlt={content.matchesHeaderImageAlt}
         imagePosition="center"
       />
 
+      <div className="shell"><TeamSwitcher teams={teams} activeSlug={activeSlug} route="/matchs" query /></div>
+
       <section className="content-band">
         <div className="shell">
           <div className="content-band__heading">
             <h2>À venir</h2>
-            <p>{data.upcomingMatches.length} rencontre{data.upcomingMatches.length > 1 ? "s" : ""} programmée{data.upcomingMatches.length > 1 ? "s" : ""}</p>
+            <p>{data.upcomingMatches.length} rencontre{data.upcomingMatches.length > 1 ? "s" : ""} programmée{data.upcomingMatches.length > 1 ? "s" : ""} · {data.season}</p>
           </div>
           {data.upcomingMatches.length > 0 ? (
             <div className="home-scoreboard">

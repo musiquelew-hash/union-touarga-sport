@@ -5,6 +5,7 @@ import { AdminNotice } from "@/components/admin/admin-notice";
 import { AdminNewRecord, AdminRecordEditor } from "@/components/admin/admin-record-form";
 import { AdminSubmitButton } from "@/components/admin/admin-submit-button";
 import { cmsKinds, getCmsCategoryAdminSafe, type CmsKind } from "@/lib/relational-cms-db";
+import { listClubTeams } from "@/lib/sports-hub";
 import type {
   MediaSummary,
   NewsSummary,
@@ -55,7 +56,10 @@ export default async function AdminCollectionPage({
   const [{ kind: rawKind }, query] = await Promise.all([params, searchParams]);
   if (!isCmsKind(rawKind)) notFound();
   const kind = rawKind;
-  const collection = await getCmsCategoryAdminSafe<RecordData>(kind);
+  const [collection, teams] = await Promise.all([
+    getCmsCategoryAdminSafe<RecordData>(kind),
+    listClubTeams(true),
+  ]);
   const section = sections[kind];
 
   return (
@@ -91,7 +95,7 @@ export default async function AdminCollectionPage({
         </div>
       </div>
 
-      <AdminNewRecord kind={kind} />
+      <AdminNewRecord kind={kind} teams={teams} />
 
       <section className="admin-record-list">
         <div className="admin-list-heading">
@@ -100,7 +104,7 @@ export default async function AdminCollectionPage({
         </div>
         {collection.records.length > 0 ? (
           collection.records.map((record) => (
-            <AdminRecordEditor kind={kind} record={record} key={record.key} />
+            <AdminRecordEditor kind={kind} record={record} key={record.key} teams={teams} />
           ))
         ) : (
           <div className="admin-empty-state">

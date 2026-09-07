@@ -2,7 +2,15 @@ import Image from "next/image";
 import type { StandingSummary } from "@/lib/uts-data";
 import { UTS_TEAM_ID } from "@/lib/uts-data";
 
-export function StandingsTable({ rows, compact = false }: { rows: StandingSummary[]; compact?: boolean }) {
+export function StandingsTable({
+  rows,
+  compact = false,
+  highlightedTeamName = "Union Touarga",
+}: {
+  rows: StandingSummary[];
+  compact?: boolean;
+  highlightedTeamName?: string;
+}) {
   return (
     <div className={`standings${compact ? " standings--compact" : ""}`}>
       <div className="standings__row standings__head">
@@ -17,7 +25,7 @@ export function StandingsTable({ rows, compact = false }: { rows: StandingSummar
       </div>
       {rows.map((row) => (
         <div
-          className={`standings__row${row.teamId === UTS_TEAM_ID ? " is-uts" : ""}`}
+          className={`standings__row${row.teamId === UTS_TEAM_ID || row.team.toLowerCase().includes(highlightedTeamName.toLowerCase()) ? " is-uts" : ""}`}
           key={row.teamId}
         >
           <strong className="standings__position">{row.position}</strong>

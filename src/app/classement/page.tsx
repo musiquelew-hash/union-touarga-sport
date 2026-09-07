@@ -2,34 +2,40 @@ import type { Metadata } from "next";
 import { Shield } from "lucide-react";
 import { PageHeading } from "@/components/page-heading";
 import { StandingsTable } from "@/components/standings-table";
+import { TeamSwitcher } from "@/components/team-switcher";
 import { getSiteContent } from "@/lib/site-content";
-import { getUtsData, UTS_TEAM_ID } from "@/lib/uts-data";
+import { getTeamSportsData, listClubTeams } from "@/lib/sports-hub";
 
 export const metadata: Metadata = {
   title: "Classement",
   description: "Classement actualisé de l'Union Touarga Sport en Botola Pro.",
 };
 
-export default async function StandingsPage() {
-  const [data, content] = await Promise.all([getUtsData(), getSiteContent()]);
-  const utsRow = data.standings.find((row) => row.teamId === UTS_TEAM_ID);
+export default async function StandingsPage({ searchParams }: { searchParams: Promise<{ equipe?: string }> }) {
+  const [params, teams, content] = await Promise.all([searchParams, listClubTeams(), getSiteContent()]);
+  const activeSlug = teams.some((team) => team.slug === params.equipe) ? params.equipe! : teams.find((team) => team.primary)?.slug || teams[0]?.slug || "masculine";
+  const data = await getTeamSportsData(activeSlug);
+  if (!data) return null;
+  const utsRow = data.standings.find((row) => row.team.toLowerCase().includes("touarga"));
   const seasonHasStarted = data.standings.some((row) => row.played > 0);
 
   return (
     <>
       <PageHeading
-        eyebrow="Botola Pro"
+        eyebrow={data.team.categoryLabel}
         title="Classement"
-        intro="Le tableau complet du championnat, avec la position de l'UTS mise en avant et des données actualisées automatiquement."
+        intro={`Le tableau de ${data.team.shortName}, synchronisé par API ou tenu à jour directement par le club.`}
         image={content.standingsHeaderImageUrl}
         imageAlt={content.standingsHeaderImageAlt}
         imagePosition="center"
       />
 
+      <div className="shell"><TeamSwitcher teams={teams} activeSlug={activeSlug} route="/classement" query /></div>
+
       <section className="content-band">
         <div className="shell">
           <div className="content-band__heading">
-            <h2>{data.standingsSeason}</h2>
+            <h2>{data.season}</h2>
             <p>
               {seasonHasStarted
                 ? "Classement sportif en cours"
