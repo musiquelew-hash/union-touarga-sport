@@ -170,7 +170,7 @@ export async function createCoachAction(formData: FormData) {
     username: text(formData, "username"), email: text(formData, "email"), name: text(formData, "name"), phone: text(formData, "phone"), password: text(formData, "password"),
     licenseLevel: text(formData, "licenseLevel"), specialty: text(formData, "specialty"),
   });
-  if (!parsed.success) redirect("/admin/academie?error=academy-settings");
+  if (!parsed.success) redirect("/admin/contenu?error=academy-settings");
   try { await createCoach(parsed.data, admin.id); } catch (error) { academyError(error, "/admin/academie"); }
   revalidatePath("/admin/academie");
   redirect("/admin/academie?saved=coach");
@@ -293,10 +293,10 @@ export async function updateAcademySettingsAction(formData: FormData) {
   try {
     await updateAcademyRegistrationSettings(parsed.data, admin.id);
   } catch (error) {
-    academyError(error, "/admin/academie");
+    academyError(error, "/admin/contenu");
   }
   updateTag("academy-registration-settings");
   revalidatePath("/academie/inscription");
   revalidatePath("/admin/academie");
-  redirect("/admin/academie?saved=settings");
+  redirect("/admin/contenu?saved=academy-settings");
 }

@@ -1,7 +1,10 @@
-import { Save } from "lucide-react";
+import { Save, Settings2 } from "lucide-react";
+import { updateAcademySettingsAction } from "@/app/academie/actions";
 import { saveSiteContentAction } from "@/app/admin/actions";
 import { AdminImageField } from "@/components/admin/admin-image-field";
 import { AdminNotice } from "@/components/admin/admin-notice";
+import { AdminSubmitButton } from "@/components/admin/admin-submit-button";
+import { getAcademyRegistrationSettings } from "@/lib/academy";
 import { getSiteContent } from "@/lib/site-content";
 
 function InputField({ label, name, value }: { label: string; name: string; value: string }) {
@@ -27,7 +30,9 @@ export default async function AdminContentPage({
 }: {
   searchParams: Promise<{ saved?: string; error?: string }>;
 }) {
-  const [content, params] = await Promise.all([getSiteContent(), searchParams]);
+  const [content, academySettings, params] = await Promise.all([
+    getSiteContent(), getAcademyRegistrationSettings(), searchParams,
+  ]);
 
   return (
     <div className="admin-page">
@@ -39,6 +44,29 @@ export default async function AdminContentPage({
         </div>
       </header>
       <AdminNotice saved={params.saved} error={params.error} />
+
+      <section className="admin-panel academy-registration-settings">
+        <div className="admin-panel__heading">
+          <div><span><Settings2 aria-hidden="true" size={16} /></span><h2>Page d’inscription Académie</h2></div>
+          <p>Saison et textes publiés sur le formulaire public.</p>
+        </div>
+        <form action={updateAcademySettingsAction} className="admin-form-grid">
+          <label><span>Saison des candidatures</span><input name="seasonLabel" defaultValue={academySettings.seasonLabel} pattern="\d{4}/\d{4}" required /></label>
+          <label><span>Titre de la page</span><input name="pageTitle" defaultValue={academySettings.pageTitle} required /></label>
+          <label className="admin-field--wide"><span>Introduction</span><textarea name="introText" defaultValue={academySettings.introText} rows={3} required /></label>
+          <label><span>Question d’ouverture</span><input name="registrationQuestion" defaultValue={academySettings.registrationQuestion} required /></label>
+          <label><span>Choix parent</span><input name="guardianModeLabel" defaultValue={academySettings.guardianModeLabel} required /></label>
+          <label><span>Choix joueur majeur</span><input name="adultModeLabel" defaultValue={academySettings.adultModeLabel} required /></label>
+          <label className="admin-field--wide"><span>Règle pour les mineurs</span><textarea name="guardianPolicyText" defaultValue={academySettings.guardianPolicyText} rows={2} required /></label>
+          <label className="admin-field--wide"><span>Règle pour les majeurs et la CIN</span><textarea name="adultPolicyText" defaultValue={academySettings.adultPolicyText} rows={2} required /></label>
+          <label className="admin-field--wide"><span>Aide du compte</span><textarea name="accountHelpText" defaultValue={academySettings.accountHelpText} rows={2} required /></label>
+          <label className="admin-field--wide"><span>Texte d’éligibilité</span><textarea name="eligibilityText" defaultValue={academySettings.eligibilityText} rows={2} required /></label>
+          <label className="admin-field--wide"><span>Texte de consentement</span><textarea name="consentText" defaultValue={academySettings.consentText} rows={3} required /></label>
+          <label><span>Réassurance données</span><input name="trustDataText" defaultValue={academySettings.trustDataText} required /></label>
+          <label><span>Réassurance famille</span><input name="trustFamilyText" defaultValue={academySettings.trustFamilyText} required /></label>
+          <AdminSubmitButton className="admin-button admin-button--primary admin-field--wide">Enregistrer la page d’inscription</AdminSubmitButton>
+        </form>
+      </section>
 
       <form action={saveSiteContentAction} className="admin-editor-form">
         <section className="admin-panel">

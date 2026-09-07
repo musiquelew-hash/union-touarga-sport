@@ -6,6 +6,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import type { RowDataPacket } from "mysql2/promise";
 import { ensureDatabaseSchema, getDatabasePool, isDatabaseConfigured } from "@/lib/database";
+import { getSessionSigningKey } from "@/lib/session-security";
 
 const ACADEMY_COOKIE = "uts_academy_session";
 const SESSION_DURATION_SECONDS = 60 * 60 * 12;
@@ -35,7 +36,7 @@ type AccountRow = RowDataPacket & {
 };
 
 function secret() {
-  return process.env.ADMIN_SESSION_SECRET || "";
+  return getSessionSigningKey("academy");
 }
 
 function sign(payload: string) {
@@ -62,7 +63,7 @@ async function findActiveAccount(id: number) {
 }
 
 export async function authenticateAcademyAccount(identifier: string, password: string) {
-  if (!isDatabaseConfigured() || secret().length < 32) return null;
+  if (!isDatabaseConfigured() || !secret()) return null;
   await ensureDatabaseSchema();
   const [rows] = await getDatabasePool().query<AccountRow[]>(
     "SELECT * FROM academy_accounts WHERE (email = ? OR username = ?) AND is_active = TRUE LIMIT 1",
@@ -97,7 +98,7 @@ export async function clearAcademySession() {
 }
 
 export async function getAcademySession() {
-  if (!isDatabaseConfigured() || secret().length < 32) return null;
+  if (!isDatabaseConfigured() || !secret()) return null;
   const token = (await cookies()).get(ACADEMY_COOKIE)?.value;
   if (!token) return null;
   const [payload, signature] = token.split(".");

@@ -1,4 +1,4 @@
-import { ArrowRight, DatabaseZap, GraduationCap, RefreshCw } from "lucide-react";
+import { ArrowRight, GraduationCap, LayoutGrid, RefreshCw } from "lucide-react";
 import Link from "next/link";
 import { runInitialContentImportAction } from "@/app/admin/actions";
 import { AdminNotice } from "@/components/admin/admin-notice";
@@ -36,7 +36,7 @@ export default async function AdminDashboardPage({
         <div>
           <p className="admin-kicker">Pilotage éditorial</p>
           <h1>Vue d’ensemble</h1>
-          <p>Gérez les contenus du club enregistrés dans MySQL. Matchs et classement restent synchronisés par API.</p>
+          <p>Gérez les contenus du club, les publications et les données sportives depuis un espace unique.</p>
         </div>
         {canImport && (
           <form action={runInitialContentImportAction}>
@@ -83,12 +83,12 @@ export default async function AdminDashboardPage({
       </section>
 
       <section className="admin-panel admin-source-panel">
-        <div className="admin-panel__icon"><DatabaseZap aria-hidden="true" size={24} /></div>
+        <div className="admin-panel__icon"><LayoutGrid aria-hidden="true" size={24} /></div>
         <div>
-          <h2>Des sources clairement séparées</h2>
+          <h2>Un pilotage centralisé</h2>
           <p>
-            Joueurs, staff, actualités, médias et textes sont publiés depuis MySQL. Les éléments masqués restent
-            en base mais disparaissent du site. Seuls le calendrier, les résultats et le classement utilisent les APIs publiques.
+            Joueurs, staff, actualités, médias et textes sont gérés ici. Les éléments masqués restent conservés mais
+            disparaissent du site public. Le calendrier, les résultats et le classement restent synchronisés automatiquement.
           </p>
         </div>
         <Link className="admin-button admin-button--secondary" href="/admin/contenu">

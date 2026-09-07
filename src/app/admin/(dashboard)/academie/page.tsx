@@ -1,6 +1,6 @@
-import { CalendarDays, GraduationCap, Settings2, ShieldCheck, UserPlus, Users } from "lucide-react";
+import { CalendarDays, GraduationCap, ShieldCheck, UserPlus, Users } from "lucide-react";
 import Image from "next/image";
-import { createAcademyGroupAction, createCoachAction, updateAcademySettingsAction, updateEnrollmentAction } from "@/app/academie/actions";
+import { createAcademyGroupAction, createCoachAction, updateEnrollmentAction } from "@/app/academie/actions";
 import { AdminNotice } from "@/components/admin/admin-notice";
 import { AdminSubmitButton } from "@/components/admin/admin-submit-button";
 import { academyCategories, enrollmentLabels, enrollmentStatuses, getAcademyCounts, getAcademyRegistrationSettings, listAcademyCoaches, listAcademyEnrollments, listAcademyGroups } from "@/lib/academy";
@@ -31,26 +31,6 @@ export default async function AcademyAdminPage({ searchParams }: { searchParams:
         <div className="admin-metric"><span>Joueurs actifs</span><strong>{counts.activePlayers}</strong><small>Inscrits cette saison</small><Users size={18} /></div>
         <div className="admin-metric"><span>Groupes actifs</span><strong>{counts.groups}</strong><small>De U10 à U21</small><GraduationCap size={18} /></div>
         <div className="admin-metric"><span>Entraîneurs</span><strong>{counts.coaches}</strong><small>Comptes actifs</small><CalendarDays size={18} /></div>
-      </section>
-
-      <section className="admin-panel academy-registration-settings">
-        <div className="admin-panel__heading"><div><span><Settings2 size={16} /></span><h2>Page d’inscription</h2></div><p>Saison et textes publiés sur le formulaire public.</p></div>
-        <form action={updateAcademySettingsAction} className="admin-form-grid">
-          <label><span>Saison des candidatures</span><input name="seasonLabel" defaultValue={registrationSettings.seasonLabel} pattern="\d{4}/\d{4}" required /></label>
-          <label><span>Titre de la page</span><input name="pageTitle" defaultValue={registrationSettings.pageTitle} required /></label>
-          <label className="admin-field--wide"><span>Introduction</span><textarea name="introText" defaultValue={registrationSettings.introText} rows={3} required /></label>
-          <label><span>Question d’ouverture</span><input name="registrationQuestion" defaultValue={registrationSettings.registrationQuestion} required /></label>
-          <label><span>Choix parent</span><input name="guardianModeLabel" defaultValue={registrationSettings.guardianModeLabel} required /></label>
-          <label><span>Choix joueur majeur</span><input name="adultModeLabel" defaultValue={registrationSettings.adultModeLabel} required /></label>
-          <label className="admin-field--wide"><span>Règle pour les mineurs</span><textarea name="guardianPolicyText" defaultValue={registrationSettings.guardianPolicyText} rows={2} required /></label>
-          <label className="admin-field--wide"><span>Règle pour les majeurs et la CIN</span><textarea name="adultPolicyText" defaultValue={registrationSettings.adultPolicyText} rows={2} required /></label>
-          <label className="admin-field--wide"><span>Aide du compte</span><textarea name="accountHelpText" defaultValue={registrationSettings.accountHelpText} rows={2} required /></label>
-          <label className="admin-field--wide"><span>Texte d’éligibilité</span><textarea name="eligibilityText" defaultValue={registrationSettings.eligibilityText} rows={2} required /></label>
-          <label className="admin-field--wide"><span>Texte de consentement</span><textarea name="consentText" defaultValue={registrationSettings.consentText} rows={3} required /></label>
-          <label><span>Réassurance données</span><input name="trustDataText" defaultValue={registrationSettings.trustDataText} required /></label>
-          <label><span>Réassurance famille</span><input name="trustFamilyText" defaultValue={registrationSettings.trustFamilyText} required /></label>
-          <AdminSubmitButton className="admin-button admin-button--primary admin-field--wide">Enregistrer la page d’inscription</AdminSubmitButton>
-        </form>
       </section>
 
       <div className="academy-admin-grid">

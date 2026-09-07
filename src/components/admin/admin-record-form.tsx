@@ -222,7 +222,7 @@ export function AdminNewRecord({ kind }: { kind: CmsKind }) {
     <section className="admin-panel admin-new-record">
       <div className="admin-panel__heading">
         <div><span>+</span><h2>Nouvel élément</h2></div>
-        <p>Il sera enregistré dans MySQL et publié sur le site.</p>
+        <p>Il sera enregistré dans le dashboard et publié sur le site.</p>
       </div>
       <EditorForm kind={kind} />
     </section>

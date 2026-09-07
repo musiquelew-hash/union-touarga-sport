@@ -44,7 +44,7 @@ export default async function AdministratorsPage({
         <div>
           <p className="admin-kicker">Sécurité et accès</p>
           <h1>Administrateurs</h1>
-          <p>Créez les accès, attribuez les rôles et révoquez immédiatement les sessions depuis MySQL.</p>
+          <p>Créez les accès, attribuez les rôles et révoquez immédiatement les sessions actives.</p>
         </div>
       </header>
 

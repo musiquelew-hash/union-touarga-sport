@@ -11,15 +11,14 @@ import {
   type AdminUser,
 } from "@/lib/admin-users";
 import { isDatabaseConfigured } from "@/lib/database";
+import { getSessionSigningKey } from "@/lib/session-security";
 
 const ADMIN_COOKIE = "uts_admin_session";
 const SESSION_DURATION_SECONDS = 60 * 60 * 8;
 const SESSION_REFRESH_THRESHOLD_SECONDS = 60 * 60 * 2;
 const SESSION_ABSOLUTE_DURATION_SECONDS = 60 * 60 * 24 * 7;
-const MINIMUM_SESSION_SECRET_LENGTH = 32;
-
 function sessionSecret() {
-  return process.env.ADMIN_SESSION_SECRET || "";
+  return getSessionSigningKey("admin");
 }
 
 function safeEqual(first: string, second: string) {
@@ -33,19 +32,7 @@ function sign(payload: string) {
 }
 
 export function isAdminAuthConfigured() {
-  const secret = sessionSecret();
-  return isDatabaseConfigured() && secret.length >= MINIMUM_SESSION_SECRET_LENGTH;
-}
-
-export async function isAdminAuthReady() {
-  if (!isAdminAuthConfigured()) return false;
-
-  try {
-    if (!(await hasAdminUsers())) await bootstrapSuperAdmin();
-    return await hasAdminUsers();
-  } catch {
-    return false;
-  }
+  return isDatabaseConfigured() && Boolean(sessionSecret());
 }
 
 export async function verifyAdminCredentials(username: string, password: string) {

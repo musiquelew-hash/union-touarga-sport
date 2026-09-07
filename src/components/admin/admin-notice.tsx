@@ -27,7 +27,7 @@ export function AdminNotice({ saved, error }: { saved?: string; error?: string }
       capacity: "Ce groupe a atteint sa capacité maximale.",
       "invalid-group": "Le groupe ou la catégorie sélectionnée n’est pas valide.",
       "schedule-conflict": "Ce créneau chevauche une séance existante.",
-      database: "La base MySQL n’est pas joignable. Vérifiez sa liaison et ses variables Railway.",
+      database: "Le service de contenu est temporairement indisponible. Réessayez dans quelques instants.",
     };
     const message = messages[error] || messages.database;
     return (

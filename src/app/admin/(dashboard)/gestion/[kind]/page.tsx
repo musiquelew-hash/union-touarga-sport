@@ -1,4 +1,4 @@
-import { DatabaseBackup, Trash2 } from "lucide-react";
+import { Archive, Trash2 } from "lucide-react";
 import { notFound } from "next/navigation";
 import { clearCollectionAction } from "@/app/admin/actions";
 import { AdminNotice } from "@/components/admin/admin-notice";
@@ -31,13 +31,13 @@ const sections: Record<CmsKind, { title: string; kicker: string; description: st
     title: "Actualités",
     kicker: "Publications",
     description: "Publiez et ordonnez les articles présentés sur le site.",
-    empty: "Aucune actualité n’est encore publiée depuis MySQL.",
+    empty: "Aucune actualité n’est encore publiée.",
   },
   media: {
     title: "Médias",
     kicker: "Vidéos et contenus",
     description: "Gérez les liens vidéo, leurs miniatures et leur ordre d’affichage.",
-    empty: "Aucun média n’est encore publié depuis MySQL.",
+    empty: "Aucun média n’est encore publié.",
   },
 };
 
@@ -84,9 +84,9 @@ export default async function AdminCollectionPage({
       <AdminNotice saved={query.saved} error={query.error} />
 
       <div className={`admin-source-state${collection.configured ? " is-managed" : ""}`}>
-        <DatabaseBackup aria-hidden="true" size={18} />
+        <Archive aria-hidden="true" size={18} />
         <div>
-          <strong>Rubrique pilotée par MySQL</strong>
+          <strong>Rubrique gérée depuis le dashboard</strong>
           <span>{collection.records.length} élément{collection.records.length === 1 ? "" : "s"} dans le dashboard</span>
         </div>
       </div>
@@ -104,7 +104,7 @@ export default async function AdminCollectionPage({
           ))
         ) : (
           <div className="admin-empty-state">
-            <DatabaseBackup aria-hidden="true" size={24} />
+            <Archive aria-hidden="true" size={24} />
             <p>{section.empty}</p>
           </div>
         )}

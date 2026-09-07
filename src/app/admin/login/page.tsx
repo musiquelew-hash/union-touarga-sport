@@ -1,9 +1,9 @@
-import { ArrowRight, LockKeyhole, ShieldAlert } from "lucide-react";
+import { ArrowRight, LockKeyhole } from "lucide-react";
 import Image from "next/image";
 import { redirect } from "next/navigation";
 import type { CSSProperties } from "react";
 import { loginAction } from "@/app/admin/actions";
-import { getAdminSession, isAdminAuthReady } from "@/lib/admin-auth";
+import { getAdminSession } from "@/lib/admin-auth";
 import { getSiteContent } from "@/lib/site-content";
 
 export default async function AdminLoginPage({
@@ -12,7 +12,7 @@ export default async function AdminLoginPage({
   searchParams: Promise<{ error?: string; passwordChanged?: string }>;
 }) {
   if (await getAdminSession()) redirect("/admin");
-  const [params, configured, content] = await Promise.all([searchParams, isAdminAuthReady(), getSiteContent()]);
+  const [params, content] = await Promise.all([searchParams, getSiteContent()]);
 
   return (
     <div className="admin-login">
@@ -30,22 +30,10 @@ export default async function AdminLoginPage({
           <LockKeyhole aria-hidden="true" size={28} />
           <p className="admin-kicker">Accès réservé</p>
           <h2>Administration</h2>
-          <p>Connectez-vous avec un compte administrateur actif enregistré dans MySQL.</p>
-
-          {!configured && (
-            <div className="admin-notice admin-notice--error" role="alert">
-              <ShieldAlert aria-hidden="true" size={18} />
-              Vérifiez la liaison MySQL et <code>ADMIN_SESSION_SECRET</code> pour activer le compte super-admin initial.
-            </div>
-          )}
+          <p>Connectez-vous avec votre identifiant et votre mot de passe.</p>
           {params.error === "credentials" && (
             <div className="admin-notice admin-notice--error" role="alert">
               Identifiant ou mot de passe incorrect.
-            </div>
-          )}
-          {params.error === "setup" && (
-            <div className="admin-notice admin-notice--error" role="alert">
-              L’authentification administrateur n’est pas encore configurée.
             </div>
           )}
           {params.passwordChanged && (
@@ -63,7 +51,7 @@ export default async function AdminLoginPage({
               <span>Mot de passe</span>
               <input name="password" type="password" autoComplete="current-password" required />
             </label>
-            <button className="admin-button admin-button--primary" disabled={!configured} type="submit">
+            <button className="admin-button admin-button--primary" type="submit">
               Se connecter <ArrowRight aria-hidden="true" size={18} />
             </button>
           </form>

@@ -15,7 +15,6 @@ import {
 import {
   clearAdminSession,
   createAdminSession,
-  isAdminAuthConfigured,
   requireAdmin,
   requireSuperAdmin,
   verifyAdminCredentials,
@@ -121,7 +120,6 @@ export async function loginAction(formData: FormData) {
     .object({ username: z.string().trim().min(1).max(100), password: z.string().min(1).max(500) })
     .safeParse({ username: text(formData, "username"), password: text(formData, "password") });
 
-  if (!isAdminAuthConfigured()) redirect("/admin/login?error=setup");
   if (!credentials.success) redirect("/admin/login?error=credentials");
   const admin = await verifyAdminCredentials(credentials.data.username, credentials.data.password);
   if (!admin) {

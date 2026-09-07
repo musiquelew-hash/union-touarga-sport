@@ -41,7 +41,6 @@ Copier `.env.example` vers `.env.local`, puis renseigner :
 - `ADMIN_USERNAME` : identifiant de secours utilisé par le bootstrap applicatif.
 - `ADMIN_DISPLAY_NAME` : nom affiché du compte de secours.
 - `ADMIN_PASSWORD` : mot de passe de secours facultatif.
-- `ADMIN_SESSION_SECRET` : secret aléatoire d'au moins 32 caractères, distinct du mot de passe.
 
 Le dashboard est accessible sur [http://localhost:8080/admin](http://localhost:8080/admin). Le schéma est créé automatiquement; sa définition complète est disponible dans `db/schema.sql`.
 
@@ -131,7 +130,7 @@ Les commandes déjà définies dans `package.json` sont :
 2. Ouvrir le service Next.js puis **Variables**.
 3. Ajouter une référence vers l'URL MySQL sous le nom `MYSQL_URL`. Railway expose généralement `${{MySQL.MYSQL_URL}}` lorsque le service s'appelle `MySQL`.
 4. Ajouter `PORT=8080`.
-5. Ajouter `ADMIN_SESSION_SECRET` comme variable privée d'au moins 32 caractères. Les variables `ADMIN_USERNAME`, `ADMIN_DISPLAY_NAME` et `ADMIN_PASSWORD` sont seulement nécessaires au bootstrap de secours.
+5. Les variables `ADMIN_USERNAME`, `ADMIN_DISPLAY_NAME` et `ADMIN_PASSWORD` sont seulement nécessaires au bootstrap de secours.
 6. Redéployer le service puis ouvrir `/admin`.
 
 Railway exécute automatiquement `npm run db:prepare` avant chaque démarrage grâce à `railway.json`. Le déploiement applique donc le schéma et garantit le premier super-administrateur, sans importer ni modifier les contenus éditoriaux. Après le tout premier déploiement, ouvrez `/admin` avec ce compte et cliquez une seule fois sur **Remplir le site une première fois**.

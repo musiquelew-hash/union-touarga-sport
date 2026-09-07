@@ -45,7 +45,7 @@ export default async function AdminDashboardLayout({ children }: { children: Rea
       <div className="admin-workspace">
         {!databaseReady && (
           <div className="admin-database-warning">
-            MySQL est hors ligne : les contenus éditoriaux ne peuvent pas être modifiés. Matchs et classement restent disponibles via les APIs.
+            Le service de contenu est temporairement indisponible. Matchs et classement restent accessibles.
           </div>
         )}
         {children}

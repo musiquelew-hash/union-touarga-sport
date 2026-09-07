@@ -36,6 +36,7 @@ export function SiteFooter({
       <div className="shell site-footer__bottom">
         <p>© {new Date().getFullYear()} Union Touarga Sport</p>
         <p>Données sportives issues de sources publiques. Horaires susceptibles d’évoluer.</p>
+        <p className="site-footer__credit">Développé par <strong>Gripo</strong> <span className="site-footer__heart" aria-label="avec amour">❤️</span></p>
       </div>
     </footer>
   );
