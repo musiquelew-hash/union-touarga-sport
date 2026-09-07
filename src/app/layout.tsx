@@ -25,6 +25,11 @@ export const metadata: Metadata = {
   description:
     "Suivez l'Union Touarga Sport : matchs, résultats, classement, effectif et médias du club de Rabat.",
   keywords: ["Union Touarga Sport", "UTS", "football marocain", "Botola Pro", "Rabat"],
+  icons: {
+    icon: [{ url: "/uts/crest-white.png", type: "image/png", sizes: "256x256" }],
+    shortcut: "/uts/crest-white.png",
+    apple: [{ url: "/uts/crest-white.png", sizes: "256x256", type: "image/png" }],
+  },
   openGraph: {
     title: "Union Touarga Sport",
     description: "Le club de Rabat depuis 1969.",

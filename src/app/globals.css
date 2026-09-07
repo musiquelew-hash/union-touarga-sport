@@ -3674,6 +3674,16 @@ img {
   scroll-margin-top: 24px;
 }
 
+#contenu-accueil { order: 1; }
+#contenu-academie { order: 2; }
+#contenu-club { order: 3; }
+#contenu-liens { order: 4; }
+#contenu-images { order: 5; }
+
+.admin-content-page .admin-editor-actions {
+  order: 6;
+}
+
 .admin-editor-actions {
   background: rgba(237, 240, 237, 0.92);
   bottom: 0;
