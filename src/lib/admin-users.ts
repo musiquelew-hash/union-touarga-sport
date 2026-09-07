@@ -99,8 +99,8 @@ export async function bootstrapSuperAdmin() {
   const password = process.env.ADMIN_PASSWORD || "";
   const displayName = (process.env.ADMIN_DISPLAY_NAME || "Super administrateur").trim();
 
-  if (!username || password.length < 12) {
-    throw new Error("ADMIN_USERNAME et ADMIN_PASSWORD (12 caractères minimum) sont requis pour le premier compte.");
+  if (!username || !password) {
+    throw new Error("ADMIN_USERNAME et ADMIN_PASSWORD sont requis pour le premier compte.");
   }
 
   const passwordHash = await hash(password, 12);

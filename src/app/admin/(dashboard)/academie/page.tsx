@@ -39,9 +39,10 @@ export default async function AcademyAdminPage({ searchParams }: { searchParams:
             <div className="admin-panel__heading"><div><span><UserPlus size={16} /></span><h2>Compte entraîneur</h2></div></div>
             <form action={createCoachAction} className="admin-form">
               <label><span>Nom complet</span><input name="name" required /></label>
+              <label><span>Nom d’utilisateur</span><input name="username" minLength={3} pattern="[-a-zA-Z0-9._]+" required /></label>
               <label><span>E-mail de connexion</span><input name="email" type="email" required /></label>
               <label><span>Téléphone</span><input name="phone" required /></label>
-              <label><span>Mot de passe initial</span><input name="password" type="password" minLength={12} required /></label>
+              <label><span>Mot de passe initial</span><input name="password" type="password" required /></label>
               <label><span>Diplôme / licence</span><input name="licenseLevel" placeholder="CAF B, UEFA B…" /></label>
               <label><span>Spécialité</span><input name="specialty" placeholder="Gardiens, préparation physique…" /></label>
               <AdminSubmitButton className="admin-button admin-button--primary">Créer l’accès entraîneur</AdminSubmitButton>
@@ -70,7 +71,7 @@ export default async function AcademyAdminPage({ searchParams }: { searchParams:
           <details className="admin-record" key={enrollment.id}>
             <summary>
               <span className={`academy-status-dot academy-status-dot--${enrollment.status}`} />
-              <span><strong>{enrollment.playerName}</strong><small>{enrollment.category} · {enrollment.registrationNumber} · Responsable : {enrollment.guardianName}</small></span>
+              <span><strong>{enrollment.playerName}</strong><small>{enrollment.category} · {enrollment.registrationNumber} · Compte : {enrollment.guardianName}</small></span>
               <span className="admin-record__status">{enrollmentLabels[enrollment.status]}</span>
             </summary>
             <div className="admin-record__body academy-enrollment-body">
@@ -80,6 +81,8 @@ export default async function AcademyAdminPage({ searchParams }: { searchParams:
                 <span>Saison <strong>{enrollment.season}</strong></span>
                 <span>Contact <strong>{enrollment.guardianPhone}</strong></span>
                 <span>E-mail <strong>{enrollment.guardianEmail}</strong></span>
+                {enrollment.videoUrl && <span>Vidéo <strong><a href={enrollment.videoUrl} target="_blank" rel="noreferrer">Voir sur YouTube</a></strong></span>}
+                {enrollment.identityDocumentAvailable && <span>Identité <strong><a href={`/admin/api/academie/joueurs/${enrollment.playerId}/piece-identite`}>Télécharger la CNI</a></strong></span>}
                 {enrollment.medicalNotes && <span className="academy-medical-note">Information médicale : <strong>{enrollment.medicalNotes}</strong></span>}
               </div>
               <form action={updateEnrollmentAction} className="admin-form academy-enrollment-action">

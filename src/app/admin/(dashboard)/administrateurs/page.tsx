@@ -59,7 +59,7 @@ export default async function AdministratorsPage({
           <div className="admin-form-grid">
             <label><span>Identifiant</span><input name="username" minLength={3} required /></label>
             <label><span>Nom affiché</span><input name="displayName" minLength={2} required /></label>
-            <label><span>Mot de passe initial</span><input autoComplete="new-password" minLength={12} name="password" required type="password" /></label>
+            <label><span>Mot de passe initial</span><input autoComplete="new-password" name="password" required type="password" /></label>
             <label>
               <span>Rôle</span>
               <select defaultValue="admin" name="role">
@@ -108,7 +108,7 @@ export default async function AdministratorsPage({
                       <option value="super_admin">Super-administrateur</option>
                     </select>
                   </label>
-                  <label><span>Nouveau mot de passe</span><input autoComplete="new-password" minLength={12} name="password" placeholder="Laisser vide pour conserver" type="password" /></label>
+                  <label><span>Nouveau mot de passe</span><input autoComplete="new-password" name="password" placeholder="Laisser vide pour conserver" type="password" /></label>
                   <label className="admin-checkbox">
                     <input defaultChecked={admin.active} name="active" type="checkbox" />
                     <span>Compte actif</span>

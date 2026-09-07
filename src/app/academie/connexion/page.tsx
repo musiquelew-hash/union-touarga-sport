@@ -23,7 +23,7 @@ export default async function AcademyLoginPage({ searchParams }: { searchParams:
         <h2>Connexion</h2>
         <AcademyNotice error={params.error} />
         <form action={academyLoginAction} className="academy-form">
-          <label><span>E-mail</span><input name="email" type="email" autoComplete="email" required /></label>
+          <label><span>Nom d’utilisateur ou e-mail</span><input name="identifier" autoComplete="username" required /></label>
           <label><span>Mot de passe</span><input name="password" type="password" autoComplete="current-password" required /></label>
           <button className="academy-button academy-button--primary" type="submit">Ouvrir mon espace <ArrowRight size={17} /></button>
         </form>

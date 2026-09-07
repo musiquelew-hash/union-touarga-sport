@@ -259,10 +259,11 @@ CREATE TABLE IF NOT EXISTS admin_audit_log (
 
 CREATE TABLE IF NOT EXISTS academy_accounts (
   account_id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  username VARCHAR(100) NULL,
   email VARCHAR(255) NOT NULL,
   display_name VARCHAR(160) NOT NULL,
   password_hash VARCHAR(255) NOT NULL,
-  role ENUM('coach', 'guardian') NOT NULL,
+  role ENUM('coach', 'guardian', 'player') NOT NULL,
   phone VARCHAR(32) NOT NULL,
   is_active BOOLEAN NOT NULL DEFAULT TRUE,
   session_version INT UNSIGNED NOT NULL DEFAULT 1,
@@ -271,6 +272,7 @@ CREATE TABLE IF NOT EXISTS academy_accounts (
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (account_id),
+  UNIQUE KEY academy_accounts_username (username),
   UNIQUE KEY academy_accounts_email (email),
   KEY academy_accounts_role_active (role, is_active),
   CONSTRAINT academy_accounts_created_by_fk
@@ -324,6 +326,7 @@ CREATE TABLE IF NOT EXISTS academy_groups (
 
 CREATE TABLE IF NOT EXISTS academy_players (
   player_id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  account_id BIGINT UNSIGNED NULL,
   registration_number VARCHAR(32) NOT NULL,
   first_name VARCHAR(120) NOT NULL,
   last_name VARCHAR(120) NOT NULL,
@@ -335,13 +338,20 @@ CREATE TABLE IF NOT EXISTS academy_players (
   school_level VARCHAR(120) NULL,
   preferred_foot ENUM('right', 'left', 'both', 'unknown') NOT NULL DEFAULT 'unknown',
   medical_notes TEXT NULL,
+  video_url VARCHAR(500) NULL,
+  identity_document_name VARCHAR(255) NULL,
+  identity_document_mime VARCHAR(100) NULL,
+  identity_document_data MEDIUMBLOB NULL,
   photo_url TEXT NOT NULL,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (player_id),
+  UNIQUE KEY academy_players_account (account_id),
   UNIQUE KEY academy_players_registration_number (registration_number),
   KEY academy_players_name (last_name, first_name),
-  KEY academy_players_birth_date (birth_date)
+  KEY academy_players_birth_date (birth_date),
+  CONSTRAINT academy_players_account_fk
+    FOREIGN KEY (account_id) REFERENCES academy_accounts (account_id) ON DELETE SET NULL
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS academy_player_guardians (
@@ -440,3 +450,45 @@ CREATE TABLE IF NOT EXISTS academy_player_notes (
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 INSERT IGNORE INTO schema_migrations (migration_key) VALUES ('006_academy_lifecycle');
+
+-- Migration idempotente des installations ayant déjà le module Académie.
+SET @sql = IF(
+  EXISTS(SELECT 1 FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'academy_accounts' AND column_name = 'username'),
+  'SELECT 1',
+  'ALTER TABLE academy_accounts ADD COLUMN username VARCHAR(100) NULL AFTER account_id'
+);
+PREPARE academy_migration FROM @sql; EXECUTE academy_migration; DEALLOCATE PREPARE academy_migration;
+
+ALTER TABLE academy_accounts MODIFY role ENUM('coach', 'guardian', 'player') NOT NULL;
+UPDATE academy_accounts SET username = CONCAT('academy', account_id) WHERE username IS NULL OR username = '';
+
+SET @sql = IF(
+  EXISTS(SELECT 1 FROM information_schema.statistics WHERE table_schema = DATABASE() AND table_name = 'academy_accounts' AND index_name = 'academy_accounts_username'),
+  'SELECT 1',
+  'ALTER TABLE academy_accounts ADD UNIQUE KEY academy_accounts_username (username)'
+);
+PREPARE academy_migration FROM @sql; EXECUTE academy_migration; DEALLOCATE PREPARE academy_migration;
+ALTER TABLE academy_accounts MODIFY username VARCHAR(100) NOT NULL;
+
+SET @sql = IF(
+  EXISTS(SELECT 1 FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'academy_players' AND column_name = 'account_id'),
+  'SELECT 1',
+  'ALTER TABLE academy_players ADD COLUMN account_id BIGINT UNSIGNED NULL AFTER player_id, ADD UNIQUE KEY academy_players_account (account_id), ADD CONSTRAINT academy_players_account_fk FOREIGN KEY (account_id) REFERENCES academy_accounts (account_id) ON DELETE SET NULL'
+);
+PREPARE academy_migration FROM @sql; EXECUTE academy_migration; DEALLOCATE PREPARE academy_migration;
+
+SET @sql = IF(
+  EXISTS(SELECT 1 FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'academy_players' AND column_name = 'video_url'),
+  'SELECT 1',
+  'ALTER TABLE academy_players ADD COLUMN video_url VARCHAR(500) NULL AFTER medical_notes'
+);
+PREPARE academy_migration FROM @sql; EXECUTE academy_migration; DEALLOCATE PREPARE academy_migration;
+
+SET @sql = IF(
+  EXISTS(SELECT 1 FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'academy_players' AND column_name = 'identity_document_name'),
+  'SELECT 1',
+  'ALTER TABLE academy_players ADD COLUMN identity_document_name VARCHAR(255) NULL AFTER video_url, ADD COLUMN identity_document_mime VARCHAR(100) NULL AFTER identity_document_name, ADD COLUMN identity_document_data MEDIUMBLOB NULL AFTER identity_document_mime'
+);
+PREPARE academy_migration FROM @sql; EXECUTE academy_migration; DEALLOCATE PREPARE academy_migration;
+
+INSERT IGNORE INTO schema_migrations (migration_key) VALUES ('007_academy_independent_players');

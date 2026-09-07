@@ -14,30 +14,31 @@ function dateTime(value: string) {
 export default async function AcademyWorkspacePage({ searchParams }: { searchParams: Promise<{ error?: string; saved?: string; registered?: string }> }) {
   const [account, params] = await Promise.all([requireAcademyAccount(), searchParams]);
   const data = account.role === "coach" ? await getCoachDashboard(account.id) : await getGuardianDashboard(account.id);
+  const workspaceLabel = account.role === "coach" ? "entraîneur" : account.role === "player" ? "joueur" : "famille";
 
   return (
     <div className="academy-shell academy-workspace">
       <header className="academy-workspace-header">
-        <div><p className="academy-eyebrow">Espace {account.role === "coach" ? "entraîneur" : "famille"}</p><h1>Bonjour, {account.displayName}</h1><p>{account.role === "coach" ? "Planifiez les séances et accompagnez la progression de vos groupes." : "Suivez les dossiers, créneaux et retours de l’encadrement."}</p></div>
+        <div><p className="academy-eyebrow">Espace {workspaceLabel}</p><h1>Bonjour, {account.displayName}</h1><p>{account.role === "coach" ? "Planifiez les séances et accompagnez la progression de vos groupes." : "Suivez les dossiers, créneaux et retours de l’encadrement."}</p></div>
         <form action={academyLogoutAction}><button className="academy-button academy-button--ghost" type="submit"><LogOut size={17} /> Déconnexion</button></form>
       </header>
       <AcademyNotice error={params.error} saved={params.saved} registered={params.registered} />
 
-      {account.role === "guardian" ? <GuardianWorkspace data={data as Awaited<ReturnType<typeof getGuardianDashboard>>} /> : <CoachWorkspace data={data as Awaited<ReturnType<typeof getCoachDashboard>>} />}
+      {account.role === "coach" ? <CoachWorkspace data={data as Awaited<ReturnType<typeof getCoachDashboard>>} /> : <GuardianWorkspace canAddChildren={account.role === "guardian"} data={data as Awaited<ReturnType<typeof getGuardianDashboard>>} />}
     </div>
   );
 }
 
-function GuardianWorkspace({ data }: { data: Awaited<ReturnType<typeof getGuardianDashboard>> }) {
+function GuardianWorkspace({ data, canAddChildren }: { data: Awaited<ReturnType<typeof getGuardianDashboard>>; canAddChildren: boolean }) {
   return <>
-    <section className="academy-section-heading"><div><Users size={22} /><h2>Mes jeunes</h2></div><span>{data.players.length}</span></section>
+    <section className="academy-section-heading"><div><Users size={22} /><h2>{canAddChildren ? "Mes jeunes" : "Mon dossier"}</h2></div><span>{data.players.length}</span></section>
     <div className="academy-player-grid">
       {data.players.map((player) => <article className="academy-player-card" key={player.id}>
         <Image src={player.photoUrl} alt={player.name} width={120} height={150} />
         <div><span className={`academy-status academy-status--${player.status}`}>{enrollmentLabels[player.status]}</span><h3>{player.name}</h3><p>{player.category} · {player.groupName || "Groupe à affecter"}</p><small>{player.registrationNumber} · Saison {player.season}</small></div>
       </article>)}
     </div>
-    <details className="academy-section academy-add-player">
+    {canAddChildren && <details className="academy-section academy-add-player">
       <summary><Plus size={17} /> Inscrire un autre enfant</summary>
       <form action={registerAdditionalPlayerAction} className="academy-form">
         <div className="academy-form-grid">
@@ -46,13 +47,14 @@ function GuardianWorkspace({ data }: { data: Awaited<ReturnType<typeof getGuardi
           <label><span>Lien familial</span><select name="relationship"><option>Parent</option><option>Tuteur légal</option></select></label><label><span>Nationalité</span><input name="nationality" defaultValue="Maroc" required /></label>
           <label><span>Établissement scolaire</span><input name="schoolName" /></label><label><span>Pied préféré</span><select name="preferredFoot" defaultValue="unknown"><option value="unknown">À déterminer</option><option value="right">Droit</option><option value="left">Gauche</option><option value="both">Les deux</option></select></label>
           <label><span>Photo récente</span><input name="photo" type="file" accept="image/jpeg,image/png,image/webp,image/gif" /></label>
+          <label className="is-wide"><span>Vidéo YouTube de candidature</span><input name="videoUrl" type="url" placeholder="https://youtu.be/..." /></label>
           <label className="is-wide"><span>Informations médicales</span><textarea name="medicalNotes" rows={3} /></label>
         </div>
         <label className="academy-check"><input name="consentMedical" type="checkbox" required /><span>J’autorise l’encadrement à utiliser ces informations pour la sécurité du joueur.</span></label>
         <label className="academy-check"><input name="consentImage" type="checkbox" /><span>J’autorise l’utilisation de son image.</span></label>
         <button className="academy-button academy-button--primary" type="submit">Transmettre le dossier</button>
       </form>
-    </details>
+    </details>}
     <Schedule sessions={data.sessions} />
     <section className="academy-section"><div className="academy-section-heading"><div><MessageSquareText size={22} /><h2>Retours de l’encadrement</h2></div></div>
       <div className="academy-feed">{data.notes.length ? data.notes.map((note) => <article key={note.id}><strong>{note.playerName} · {note.category}</strong><p>{note.text}</p><small>{note.authorName} · {dateTime(note.createdAt)}</small></article>) : <p className="academy-empty">Aucune remarque partagée pour le moment.</p>}</div>

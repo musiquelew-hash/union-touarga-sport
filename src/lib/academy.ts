@@ -2,7 +2,7 @@ import "server-only";
 
 import { randomUUID } from "node:crypto";
 import { hash } from "bcryptjs";
-import type { ResultSetHeader, RowDataPacket } from "mysql2/promise";
+import type { PoolConnection, ResultSetHeader, RowDataPacket } from "mysql2/promise";
 import { ensureDatabaseSchema, getDatabasePool } from "@/lib/database";
 
 export const academyCategories = ["U10", "U11", "U12", "U13", "U14", "U15", "U16", "U17", "U18", "U19", "U20", "U21"] as const;
@@ -22,7 +22,7 @@ export const enrollmentLabels: Record<EnrollmentStatus, string> = {
 };
 
 export class AcademyError extends Error {
-  constructor(public readonly code: "duplicate" | "not-found" | "forbidden" | "capacity" | "invalid-group" | "schedule-conflict") {
+  constructor(public readonly code: "duplicate" | "not-found" | "forbidden" | "capacity" | "invalid-group" | "schedule-conflict" | "age-policy" | "identity-document") {
     super(code);
   }
 }
@@ -36,8 +36,22 @@ export function currentSeason() {
 export function categoryForBirthDate(birthDate: string, season = currentSeason()): AcademyCategory | null {
   const birthYear = Number(birthDate.slice(0, 4));
   const seasonEnd = Number(season.split("/")[1]);
-  const age = seasonEnd - birthYear;
+  const age = ageOnDate(birthDate) === 21 ? 21 : seasonEnd - birthYear;
   return academyCategories.includes(`U${age}` as AcademyCategory) ? `U${age}` as AcademyCategory : null;
+}
+
+export function ageOnDate(birthDate: string, referenceDate = new Date()) {
+  const [year, month, day] = birthDate.split("-").map(Number);
+  if (!year || !month || !day) return -1;
+  let age = referenceDate.getUTCFullYear() - year;
+  const birthdayPassed = referenceDate.getUTCMonth() + 1 > month
+    || (referenceDate.getUTCMonth() + 1 === month && referenceDate.getUTCDate() >= day);
+  if (!birthdayPassed) age -= 1;
+  return age;
+}
+
+export function isAdultAcademyApplicant(birthDate: string, referenceDate = new Date()) {
+  return ageOnDate(birthDate, referenceDate) >= 18;
 }
 
 function safeAcademyPhotoUrl(value: string) {
@@ -86,6 +100,8 @@ export type AcademyEnrollment = {
   guardianEmail: string;
   guardianPhone: string;
   medicalNotes: string | null;
+  videoUrl: string | null;
+  identityDocumentAvailable: boolean;
   submittedAt: string;
 };
 
@@ -148,17 +164,20 @@ export async function listAcademyEnrollments() {
     enrollment_id: number; player_id: number; player_name: string; registration_number: string; birth_date: Date | string;
     requested_category: AcademyCategory; status: EnrollmentStatus; season_label: string; photo_url: string;
     group_id: number | null; group_name: string | null; guardian_name: string; guardian_email: string;
-    guardian_phone: string; medical_notes: string | null; submitted_at: Date | string;
+    guardian_phone: string; medical_notes: string | null; video_url: string | null;
+    identity_document_available: number; submitted_at: Date | string;
   })[]>(
     `SELECT e.enrollment_id, p.player_id, CONCAT(p.first_name, ' ', p.last_name) AS player_name,
       p.registration_number, p.birth_date, e.requested_category, e.status, e.season_label, p.photo_url,
-      e.group_id, g.group_name, a.display_name AS guardian_name, a.email AS guardian_email,
-      a.phone AS guardian_phone, p.medical_notes, e.submitted_at
+      e.group_id, g.group_name, COALESCE(a.display_name, pa.display_name) AS guardian_name,
+      COALESCE(a.email, pa.email) AS guardian_email, COALESCE(a.phone, pa.phone) AS guardian_phone,
+      p.medical_notes, p.video_url, p.identity_document_data IS NOT NULL AS identity_document_available, e.submitted_at
      FROM academy_enrollments e
      JOIN academy_players p ON p.player_id = e.player_id
-     JOIN academy_player_guardians pg ON pg.player_id = p.player_id AND pg.is_primary = TRUE
-     JOIN academy_guardians gu ON gu.guardian_id = pg.guardian_id
-     JOIN academy_accounts a ON a.account_id = gu.account_id
+         LEFT JOIN academy_player_guardians pg ON pg.player_id = p.player_id AND pg.is_primary = TRUE
+         LEFT JOIN academy_guardians gu ON gu.guardian_id = pg.guardian_id
+         LEFT JOIN academy_accounts a ON a.account_id = gu.account_id
+         LEFT JOIN academy_accounts pa ON pa.account_id = p.account_id
      LEFT JOIN academy_groups g ON g.group_id = e.group_id
      ORDER BY FIELD(e.status, 'submitted', 'review', 'trial', 'accepted', 'active', 'suspended', 'rejected', 'left'), e.submitted_at DESC`,
   );
@@ -166,7 +185,8 @@ export async function listAcademyEnrollments() {
     registrationNumber: row.registration_number, birthDate: new Date(row.birth_date).toISOString().slice(0, 10), category: row.requested_category,
     status: row.status, season: row.season_label, photoUrl: safeAcademyPhotoUrl(row.photo_url), groupId: row.group_id ? Number(row.group_id) : null,
     groupName: row.group_name, guardianName: row.guardian_name, guardianEmail: row.guardian_email,
-    guardianPhone: row.guardian_phone, medicalNotes: row.medical_notes, submittedAt: new Date(row.submitted_at).toISOString() }));
+    guardianPhone: row.guardian_phone, medicalNotes: row.medical_notes, videoUrl: row.video_url,
+    identityDocumentAvailable: Boolean(row.identity_document_available), submittedAt: new Date(row.submitted_at).toISOString() }));
 }
 
 export async function getAcademyCounts() {
@@ -191,15 +211,15 @@ export async function getAcademyCountsSafe() {
   }
 }
 
-export async function createCoach(input: { email: string; name: string; phone: string; password: string; licenseLevel: string; specialty: string }, adminId: number) {
+export async function createCoach(input: { username: string; email: string; name: string; phone: string; password: string; licenseLevel: string; specialty: string }, adminId: number) {
   await ensureDatabaseSchema();
   const connection = await getDatabasePool().getConnection();
   try {
     await connection.beginTransaction();
     const passwordHash = await hash(input.password, 12);
     const [account] = await connection.execute<ResultSetHeader>(
-      `INSERT INTO academy_accounts (email, display_name, password_hash, role, phone, created_by_admin_id)
-       VALUES (?, ?, ?, 'coach', ?, ?)`, [input.email, input.name, passwordHash, input.phone, adminId],
+      `INSERT INTO academy_accounts (username, email, display_name, password_hash, role, phone, created_by_admin_id)
+       VALUES (?, ?, ?, ?, 'coach', ?, ?)`, [input.username, input.email, input.name, passwordHash, input.phone, adminId],
     );
     await connection.execute(
       "INSERT INTO academy_coaches (account_id, license_level, specialty) VALUES (?, ?, ?)",
@@ -228,47 +248,101 @@ export async function createAcademyGroup(input: { category: AcademyCategory; nam
   }
 }
 
-export async function createGuardianApplication(input: {
-  email: string; guardianName: string; phone: string; password: string; address: string; city: string; emergencyPhone: string;
+type AcademyPlayerApplication = {
   relationship: string; firstName: string; lastName: string; birthDate: string; gender: "male" | "female";
   nationality: string; birthPlace: string; schoolName: string; schoolLevel: string; preferredFoot: "right" | "left" | "both" | "unknown";
-  medicalNotes: string; photoUrl: string; consentMedical: boolean; consentImage: boolean;
-}) {
-  await ensureDatabaseSchema();
+  medicalNotes: string; videoUrl: string; photoUrl: string; consentMedical: boolean; consentImage: boolean;
+};
+
+async function insertPlayerApplication(
+  connection: PoolConnection,
+  input: AcademyPlayerApplication,
+  accountId: number | null,
+  guardianId: number | null,
+) {
   const season = currentSeason();
   const category = categoryForBirthDate(input.birthDate, season);
   if (!category) throw new AcademyError("invalid-group");
+  const registrationNumber = `UTS-${new Date().getUTCFullYear()}-${randomUUID().slice(0, 8).toUpperCase()}`;
+  const [player] = await connection.execute<ResultSetHeader>(
+    `INSERT INTO academy_players (account_id, registration_number, first_name, last_name, birth_date, gender, nationality,
+      birth_place, school_name, school_level, preferred_foot, medical_notes, video_url, photo_url)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [accountId, registrationNumber, input.firstName, input.lastName, input.birthDate, input.gender, input.nationality,
+      input.birthPlace || null, input.schoolName || null, input.schoolLevel || null, input.preferredFoot,
+      input.medicalNotes || null, input.videoUrl || null, input.photoUrl],
+  );
+  if (guardianId) {
+    await connection.execute(
+      `INSERT INTO academy_player_guardians (player_id, guardian_id, relationship_label, is_primary)
+       VALUES (?, ?, ?, TRUE)`, [player.insertId, guardianId, input.relationship],
+    );
+  }
+  await connection.execute(
+    `INSERT INTO academy_enrollments (player_id, season_label, requested_category, consent_medical, consent_image)
+     VALUES (?, ?, ?, ?, ?)`, [player.insertId, season, category, input.consentMedical, input.consentImage],
+  );
+  return { playerId: Number(player.insertId), registrationNumber, category };
+}
+
+export async function createGuardianApplication(input: {
+  username: string; email: string; guardianName: string; phone: string; password: string; address: string; city: string; emergencyPhone: string;
+  player: AcademyPlayerApplication; additionalPlayers: AcademyPlayerApplication[];
+}) {
+  await ensureDatabaseSchema();
+  const players = [input.player, ...input.additionalPlayers];
+  if (players.some((player) => isAdultAcademyApplicant(player.birthDate))) throw new AcademyError("age-policy");
   const connection = await getDatabasePool().getConnection();
   try {
     await connection.beginTransaction();
     const passwordHash = await hash(input.password, 12);
     const [account] = await connection.execute<ResultSetHeader>(
-      `INSERT INTO academy_accounts (email, display_name, password_hash, role, phone)
-       VALUES (?, ?, ?, 'guardian', ?)`, [input.email, input.guardianName, passwordHash, input.phone],
+      `INSERT INTO academy_accounts (username, email, display_name, password_hash, role, phone)
+       VALUES (?, ?, ?, ?, 'guardian', ?)`, [input.username, input.email, input.guardianName, passwordHash, input.phone],
     );
     const [guardian] = await connection.execute<ResultSetHeader>(
       "INSERT INTO academy_guardians (account_id, address_text, city, emergency_phone) VALUES (?, ?, ?, ?)",
       [account.insertId, input.address, input.city, input.emergencyPhone],
     );
-    const registrationNumber = `UTS-${new Date().getUTCFullYear()}-${randomUUID().slice(0, 8).toUpperCase()}`;
-    const [player] = await connection.execute<ResultSetHeader>(
-      `INSERT INTO academy_players (registration_number, first_name, last_name, birth_date, gender, nationality,
-        birth_place, school_name, school_level, preferred_foot, medical_notes, photo_url)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [registrationNumber, input.firstName, input.lastName, input.birthDate, input.gender, input.nationality,
-        input.birthPlace || null, input.schoolName || null, input.schoolLevel || null, input.preferredFoot,
-        input.medicalNotes || null, input.photoUrl],
+    const registrations = [];
+    for (const player of players) {
+      registrations.push(await insertPlayerApplication(connection, player, null, Number(guardian.insertId)));
+    }
+    await connection.commit();
+    return { accountId: Number(account.insertId), registrations };
+  } catch (error) {
+    await connection.rollback();
+    if ((error as { code?: string }).code === "ER_DUP_ENTRY") throw new AcademyError("duplicate");
+    throw error;
+  } finally {
+    connection.release();
+  }
+}
+
+export async function createIndependentPlayerApplication(input: {
+  username: string; email: string; phone: string; password: string;
+  identityDocument: { name: string; mimeType: string; bytes: Buffer };
+  player: AcademyPlayerApplication;
+}) {
+  await ensureDatabaseSchema();
+  if (!isAdultAcademyApplicant(input.player.birthDate)) throw new AcademyError("age-policy");
+  const connection = await getDatabasePool().getConnection();
+  try {
+    await connection.beginTransaction();
+    const passwordHash = await hash(input.password, 12);
+    const [account] = await connection.execute<ResultSetHeader>(
+      `INSERT INTO academy_accounts (username, email, display_name, password_hash, role, phone)
+       VALUES (?, ?, ?, ?, 'player', ?)`,
+      [input.username, input.email, `${input.player.firstName} ${input.player.lastName}`, passwordHash, input.phone],
     );
+    const registration = await insertPlayerApplication(connection, input.player, Number(account.insertId), null);
     await connection.execute(
-      `INSERT INTO academy_player_guardians (player_id, guardian_id, relationship_label, is_primary)
-       VALUES (?, ?, ?, TRUE)`, [player.insertId, guardian.insertId, input.relationship],
-    );
-    await connection.execute(
-      `INSERT INTO academy_enrollments (player_id, season_label, requested_category, consent_medical, consent_image)
-       VALUES (?, ?, ?, ?, ?)`, [player.insertId, season, category, input.consentMedical, input.consentImage],
+      `UPDATE academy_players SET identity_document_name = ?, identity_document_mime = ?, identity_document_data = ?
+       WHERE player_id = ?`,
+      [input.identityDocument.name, input.identityDocument.mimeType, input.identityDocument.bytes, registration.playerId],
     );
     await connection.commit();
-    return { accountId: Number(account.insertId), registrationNumber, category };
+    return { accountId: Number(account.insertId), registration };
   } catch (error) {
     await connection.rollback();
     if ((error as { code?: string }).code === "ER_DUP_ENTRY") throw new AcademyError("duplicate");
@@ -281,12 +355,10 @@ export async function createGuardianApplication(input: {
 export async function createPlayerForGuardian(input: {
   accountId: number; relationship: string; firstName: string; lastName: string; birthDate: string;
   gender: "male" | "female"; nationality: string; schoolName: string; preferredFoot: "right" | "left" | "both" | "unknown";
-  medicalNotes: string; photoUrl: string; consentMedical: boolean; consentImage: boolean;
+  medicalNotes: string; videoUrl: string; photoUrl: string; consentMedical: boolean; consentImage: boolean;
 }) {
   await ensureDatabaseSchema();
-  const season = currentSeason();
-  const category = categoryForBirthDate(input.birthDate, season);
-  if (!category) throw new AcademyError("invalid-group");
+  if (isAdultAcademyApplicant(input.birthDate)) throw new AcademyError("age-policy");
   const connection = await getDatabasePool().getConnection();
   try {
     await connection.beginTransaction();
@@ -294,23 +366,9 @@ export async function createPlayerForGuardian(input: {
       "SELECT guardian_id FROM academy_guardians WHERE account_id = ? LIMIT 1", [input.accountId],
     );
     if (!guardians[0]) throw new AcademyError("forbidden");
-    const registrationNumber = `UTS-${new Date().getUTCFullYear()}-${randomUUID().slice(0, 8).toUpperCase()}`;
-    const [player] = await connection.execute<ResultSetHeader>(
-      `INSERT INTO academy_players (registration_number, first_name, last_name, birth_date, gender, nationality,
-        school_name, preferred_foot, medical_notes, photo_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [registrationNumber, input.firstName, input.lastName, input.birthDate, input.gender, input.nationality,
-        input.schoolName || null, input.preferredFoot, input.medicalNotes || null, input.photoUrl],
-    );
-    await connection.execute(
-      `INSERT INTO academy_player_guardians (player_id, guardian_id, relationship_label, is_primary)
-       VALUES (?, ?, ?, TRUE)`, [player.insertId, guardians[0].guardian_id, input.relationship],
-    );
-    await connection.execute(
-      `INSERT INTO academy_enrollments (player_id, season_label, requested_category, consent_medical, consent_image)
-       VALUES (?, ?, ?, ?, ?)`, [player.insertId, season, category, input.consentMedical, input.consentImage],
-    );
+    const result = await insertPlayerApplication(connection, { ...input, birthPlace: "", schoolLevel: "" }, null, Number(guardians[0].guardian_id));
     await connection.commit();
-    return registrationNumber;
+    return result.registrationNumber;
   } catch (error) {
     await connection.rollback();
     throw error;
@@ -432,10 +490,12 @@ export async function getGuardianDashboard(accountId: number) {
   })[]>(
     `SELECT p.player_id, CONCAT(p.first_name, ' ', p.last_name) AS player_name, p.registration_number, p.photo_url,
       e.status, e.requested_category, e.season_label, g.group_name
-     FROM academy_guardians gu JOIN academy_player_guardians pg ON pg.guardian_id = gu.guardian_id
-     JOIN academy_players p ON p.player_id = pg.player_id
+    FROM academy_players p
+    LEFT JOIN academy_player_guardians pg ON pg.player_id = p.player_id
+    LEFT JOIN academy_guardians gu ON pg.guardian_id = gu.guardian_id
      JOIN academy_enrollments e ON e.player_id = p.player_id
-     LEFT JOIN academy_groups g ON g.group_id = e.group_id WHERE gu.account_id = ? ORDER BY e.submitted_at DESC`, [accountId],
+    LEFT JOIN academy_groups g ON g.group_id = e.group_id
+    WHERE gu.account_id = ? OR p.account_id = ? ORDER BY e.submitted_at DESC`, [accountId, accountId],
   );
   const playerIds = players.map((row) => Number(row.player_id));
   if (!playerIds.length) return { players: [], sessions: [], notes: [] };
@@ -500,4 +560,17 @@ export async function getCoachDashboard(accountId: number) {
     startsAt: new Date(row.starts_at).toISOString(), endsAt: new Date(row.ends_at).toISOString(), venue: row.venue,
     focus: row.focus_text, status: row.status })), attendance: attendance.map((row) => ({ sessionId: Number(row.session_id),
     playerId: Number(row.player_id), status: row.status })) };
+}
+
+export async function getAcademyIdentityDocument(playerId: number) {
+  await ensureDatabaseSchema();
+  const [rows] = await getDatabasePool().query<(RowDataPacket & {
+    identity_document_name: string; identity_document_mime: string; identity_document_data: Buffer;
+  })[]>(
+    `SELECT identity_document_name, identity_document_mime, identity_document_data
+     FROM academy_players WHERE player_id = ? AND identity_document_data IS NOT NULL LIMIT 1`,
+    [playerId],
+  );
+  const row = rows[0];
+  return row ? { name: row.identity_document_name, mimeType: row.identity_document_mime, bytes: row.identity_document_data } : null;
 }

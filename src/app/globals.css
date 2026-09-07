@@ -4484,6 +4484,40 @@ img {
   gap: 22px;
 }
 
+.academy-segmented {
+  background: #eef2ef;
+  border: 1px solid #d8ded9;
+  display: grid;
+  gap: 4px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  padding: 4px;
+}
+
+.academy-segmented button {
+  background: transparent;
+  border: 0;
+  color: #536059;
+  cursor: pointer;
+  font-weight: 800;
+  min-height: 46px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  padding: 10px;
+}
+
+.academy-segmented button.is-active {
+  background: var(--academy-ink);
+  color: #fff;
+}
+
+.academy-policy-note {
+  border-left: 3px solid var(--academy-yellow);
+  color: #58635d;
+  line-height: 1.55;
+  margin: 16px 0 0;
+  padding-left: 12px;
+}
+
 .academy-form-section,
 .academy-consent-panel,
 .academy-section,
@@ -4492,6 +4526,11 @@ img {
   border: 1px solid #d8ded9;
   box-shadow: 0 12px 40px rgba(16, 32, 25, 0.07);
   padding: 26px;
+}
+
+.academy-form-section,
+.academy-consent-panel {
+  min-width: 0;
 }
 
 .academy-form-section__heading,
@@ -4510,6 +4549,23 @@ img {
 .academy-form-section__heading {
   gap: 14px;
   margin-bottom: 22px;
+}
+
+.academy-form-section__heading > div {
+  flex: 1;
+  min-width: 0;
+}
+
+.academy-remove-child {
+  align-items: center;
+  background: #fff;
+  border: 1px solid #d8ded9;
+  color: #9b2f2f;
+  cursor: pointer;
+  display: inline-flex;
+  height: 38px;
+  justify-content: center;
+  width: 38px;
 }
 
 .academy-form-section__heading > span {
@@ -4601,6 +4657,34 @@ img {
 
 .academy-form-grid .is-wide {
   grid-column: 1 / -1;
+}
+
+.academy-player-consents {
+  border-top: 1px solid #e3e8e4;
+  margin-top: 20px;
+  padding-top: 18px;
+}
+
+.academy-identity-upload {
+  background: #f5f8f5;
+  border: 1px dashed #9eaaa2;
+  gap: 8px;
+  margin-top: 20px;
+  padding: 16px;
+}
+
+.academy-identity-upload > span {
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.academy-identity-upload small {
+  color: #68736d;
+}
+
+.academy-add-child-button {
+  justify-self: start;
 }
 
 .academy-consent-panel {
@@ -5092,6 +5176,10 @@ img {
 
   .academy-auth-page {
     padding: 0;
+  }
+
+  .academy-segmented {
+    grid-template-columns: 1fr;
   }
 
   .academy-auth-intro,

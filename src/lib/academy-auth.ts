@@ -10,9 +10,10 @@ import { ensureDatabaseSchema, getDatabasePool, isDatabaseConfigured } from "@/l
 const ACADEMY_COOKIE = "uts_academy_session";
 const SESSION_DURATION_SECONDS = 60 * 60 * 12;
 
-export type AcademyAccountRole = "coach" | "guardian";
+export type AcademyAccountRole = "coach" | "guardian" | "player";
 export type AcademyAccount = {
   id: number;
+  username: string;
   email: string;
   displayName: string;
   phone: string;
@@ -22,6 +23,7 @@ export type AcademyAccount = {
 
 type AccountRow = RowDataPacket & {
   account_id: number;
+  username: string;
   email: string;
   display_name: string;
   phone: string;
@@ -45,7 +47,7 @@ function safeEqual(leftValue: string, rightValue: string) {
 }
 
 function mapAccount(row: AccountRow): AcademyAccount {
-  return { id: Number(row.account_id), email: row.email, displayName: row.display_name,
+  return { id: Number(row.account_id), username: row.username, email: row.email, displayName: row.display_name,
     phone: row.phone, role: row.role, sessionVersion: Number(row.session_version) };
 }
 
@@ -57,11 +59,12 @@ async function findActiveAccount(id: number) {
   return rows[0] ? mapAccount(rows[0]) : null;
 }
 
-export async function authenticateAcademyAccount(email: string, password: string) {
+export async function authenticateAcademyAccount(identifier: string, password: string) {
   if (!isDatabaseConfigured() || secret().length < 32) return null;
   await ensureDatabaseSchema();
   const [rows] = await getDatabasePool().query<AccountRow[]>(
-    "SELECT * FROM academy_accounts WHERE email = ? AND is_active = TRUE LIMIT 1", [email.trim().toLowerCase()],
+    "SELECT * FROM academy_accounts WHERE (email = ? OR username = ?) AND is_active = TRUE LIMIT 1",
+    [identifier.trim().toLowerCase(), identifier.trim().toLowerCase()],
   );
   const row = rows[0];
   if (!row || !(await compare(password, row.password_hash))) return null;

@@ -443,12 +443,12 @@ const adminAccountSchema = z.object({
 });
 
 const createAdminSchema = adminAccountSchema.extend({
-  password: z.string().min(12).max(200),
+  password: z.string().min(1).max(200),
 });
 
 const updateAdminSchema = adminAccountSchema.extend({
   id: z.number().int().positive(),
-  password: z.string().max(200).refine((value) => value.length === 0 || value.length >= 12),
+  password: z.string().max(200),
 });
 
 function adminAccountError(error: unknown): never {
@@ -517,8 +517,8 @@ export async function deleteAdminAction(formData: FormData) {
 const passwordChangeSchema = z
   .object({
     currentPassword: z.string().min(1).max(200),
-    newPassword: z.string().min(12).max(200),
-    confirmPassword: z.string().min(12).max(200),
+    newPassword: z.string().min(1).max(200),
+    confirmPassword: z.string().min(1).max(200),
   })
   .refine((data) => data.newPassword === data.confirmPassword);
 

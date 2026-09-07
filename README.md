@@ -55,11 +55,11 @@ Le bootstrap applicatif avec `ADMIN_USERNAME`, `ADMIN_DISPLAY_NAME` et `ADMIN_PA
 
 ### Académie U10–U21
 
-Le formulaire public `/academie/inscription` crée en une transaction le compte du responsable légal, le dossier du joueur et son inscription pour la saison courante. La catégorie U10 à U21 est calculée depuis la date de naissance. Un même compte famille peut ensuite inscrire plusieurs enfants et suivre leurs statuts, leurs groupes, le planning et les observations partagées.
+Le formulaire public `/academie/inscription` propose deux parcours. Un joueur mineur est inscrit par son parent ou tuteur, qui peut déposer plusieurs candidatures de filles ou garçons dans le même compte famille, immédiatement ou plus tard depuis son espace. De 18 à 21 ans, le joueur peut créer son propre compte à condition de joindre sa carte nationale au format PDF, JPG ou PNG. La catégorie U10 à U21 est calculée depuis la date de naissance et chaque fiche accepte un lien YouTube facultatif.
 
 Le centre `/admin/academie` permet aux administrateurs de traiter le cycle `Candidature reçue → Étude → Essai → Accepté → Actif`, d’affecter les joueurs aux groupes et de surveiller les capacités. Le super-administrateur crée les comptes entraîneurs; chaque entraîneur accède à `/academie/espace`, uniquement à ses groupes, pour publier des créneaux, saisir les présences et ajouter des observations privées ou visibles par la famille.
 
-Les comptes Académie utilisent une session distincte de l’administration. Les mots de passe sont hachés avec bcrypt, les cookies sont signés et invalidables, et les photos téléversées sont conservées dans MySQL pour survivre aux redéploiements Railway.
+Les comptes Académie utilisent un nom d’utilisateur et un e-mail; les deux permettent de se connecter. Leur session reste distincte de l’administration. Les mots de passe n’ont pas de longueur minimale imposée mais restent hachés avec bcrypt, les cookies sont signés et invalidables, et les photos ainsi que les pièces d’identité privées sont conservées dans MySQL pour survivre aux redéploiements Railway.
 
 ### Structure MySQL
 

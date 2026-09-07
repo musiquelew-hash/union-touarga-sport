@@ -30,8 +30,8 @@ export default async function AccountPage({
         </div>
         <form action={changeOwnPasswordAction} className="admin-form">
           <label><span>Mot de passe actuel</span><input autoComplete="current-password" name="currentPassword" required type="password" /></label>
-          <label><span>Nouveau mot de passe</span><input autoComplete="new-password" minLength={12} name="newPassword" required type="password" /></label>
-          <label><span>Confirmer le nouveau mot de passe</span><input autoComplete="new-password" minLength={12} name="confirmPassword" required type="password" /></label>
+          <label><span>Nouveau mot de passe</span><input autoComplete="new-password" name="newPassword" required type="password" /></label>
+          <label><span>Confirmer le nouveau mot de passe</span><input autoComplete="new-password" name="confirmPassword" required type="password" /></label>
           <AdminSubmitButton className="admin-button admin-button--primary" pendingLabel="Modification…">
             <KeyRound aria-hidden="true" size={17} /> Modifier et se reconnecter
           </AdminSubmitButton>
