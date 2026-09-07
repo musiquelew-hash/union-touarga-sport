@@ -29,6 +29,7 @@ import {
 } from "@/lib/admin-users";
 import { runInitialContentImport } from "@/lib/initial-content-import";
 import { ImageUploadError, resolveImageField } from "@/lib/media-assets";
+import { updateAcademyRegistrationSettings, type AcademyRegistrationSettings } from "@/lib/academy";
 import { defaultSiteContent, type SiteContent } from "@/lib/site-content";
 import {
   type MediaSummary,
@@ -179,8 +180,34 @@ const siteContentSchema = z.object({
   mediaFallbackImageUrl: imagePath,
 });
 
+const academyRegistrationSettingsSchema = z.object({
+  seasonLabel: z.string().trim().regex(/^\d{4}\/\d{4}$/).refine((value) => Number(value.slice(5)) === Number(value.slice(0, 4)) + 1),
+  pageTitle: z.string().trim().min(1).max(180),
+  introText: z.string().trim().min(1).max(1000),
+  registrationQuestion: z.string().trim().min(1).max(255),
+  guardianModeLabel: z.string().trim().min(1).max(120),
+  adultModeLabel: z.string().trim().min(1).max(120),
+  guardianPolicyText: z.string().trim().min(1).max(1000),
+  adultPolicyText: z.string().trim().min(1).max(1000),
+  accountHelpText: z.string().trim().min(1).max(500),
+  eligibilityText: z.string().trim().min(1).max(1000),
+  consentText: z.string().trim().min(1).max(1000),
+  trustDataText: z.string().trim().min(1).max(160),
+  trustFamilyText: z.string().trim().min(1).max(160),
+});
+
 export async function saveSiteContentAction(formData: FormData) {
   const admin = await requireAdmin();
+  const academySettings = academyRegistrationSettingsSchema.safeParse({
+    seasonLabel: text(formData, "seasonLabel"), pageTitle: text(formData, "pageTitle"),
+    introText: text(formData, "introText"), registrationQuestion: text(formData, "registrationQuestion"),
+    guardianModeLabel: text(formData, "guardianModeLabel"), adultModeLabel: text(formData, "adultModeLabel"),
+    guardianPolicyText: text(formData, "guardianPolicyText"), adultPolicyText: text(formData, "adultPolicyText"),
+    accountHelpText: text(formData, "accountHelpText"), eligibilityText: text(formData, "eligibilityText"),
+    consentText: text(formData, "consentText"), trustDataText: text(formData, "trustDataText"),
+    trustFamilyText: text(formData, "trustFamilyText"),
+  } satisfies AcademyRegistrationSettings);
+  if (!academySettings.success) redirect("/admin/contenu?error=academy-settings");
   const images = await uploadedImages(formData, [
     "crestColorUrl", "crestWhiteUrl", "adminLoginImageUrl", "homeHeroImageUrl",
     "homeManifestoImageUrl", "teamHeaderImageUrl", "matchesHeaderImageUrl",
@@ -236,7 +263,10 @@ export async function saveSiteContentAction(formData: FormData) {
 
   return persist(async () => {
     await saveCmsSetting("site-content", parsed.data, admin.id);
+    await updateAcademyRegistrationSettings(academySettings.data, admin.id);
     updateTag("site-content");
+    updateTag("academy-registration-settings");
+    revalidatePath("/academie/inscription");
   }, "/admin/contenu");
 }
 

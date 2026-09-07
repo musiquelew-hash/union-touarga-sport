@@ -1,9 +1,7 @@
-import { Save, Settings2 } from "lucide-react";
-import { updateAcademySettingsAction } from "@/app/academie/actions";
+import { GraduationCap, House, Images, Landmark, Save, Share2 } from "lucide-react";
 import { saveSiteContentAction } from "@/app/admin/actions";
 import { AdminImageField } from "@/components/admin/admin-image-field";
 import { AdminNotice } from "@/components/admin/admin-notice";
-import { AdminSubmitButton } from "@/components/admin/admin-submit-button";
 import { getAcademyRegistrationSettings } from "@/lib/academy";
 import { getSiteContent } from "@/lib/site-content";
 
@@ -25,6 +23,14 @@ function TextAreaField({ label, name, value }: { label: string; name: string; va
   );
 }
 
+const contentSections = [
+  { href: "#contenu-accueil", label: "Accueil", icon: House },
+  { href: "#contenu-academie", label: "Inscription Académie", icon: GraduationCap },
+  { href: "#contenu-club", label: "Histoire du club", icon: Landmark },
+  { href: "#contenu-liens", label: "Liens et footer", icon: Share2 },
+  { href: "#contenu-images", label: "Images", icon: Images },
+];
+
 export default async function AdminContentPage({
   searchParams,
 }: {
@@ -35,44 +41,31 @@ export default async function AdminContentPage({
   ]);
 
   return (
-    <div className="admin-page">
+    <div className="admin-page admin-content-page">
       <header className="admin-page-heading">
         <div>
-          <p className="admin-kicker">Identité et histoire</p>
+          <p className="admin-kicker">Publication</p>
           <h1>Contenu du site</h1>
-          <p>Modifiez les textes structurants de l’accueil, du club et des éléments communs.</p>
+          <p>Travaillez du contenu le plus visible vers les réglages complémentaires, puis publiez l’ensemble en une fois.</p>
         </div>
       </header>
       <AdminNotice saved={params.saved} error={params.error} />
 
-      <section className="admin-panel academy-registration-settings">
-        <div className="admin-panel__heading">
-          <div><span><Settings2 aria-hidden="true" size={16} /></span><h2>Page d’inscription Académie</h2></div>
-          <p>Saison et textes publiés sur le formulaire public.</p>
-        </div>
-        <form action={updateAcademySettingsAction} className="admin-form-grid">
-          <label><span>Saison des candidatures</span><input name="seasonLabel" defaultValue={academySettings.seasonLabel} pattern="\d{4}/\d{4}" required /></label>
-          <label><span>Titre de la page</span><input name="pageTitle" defaultValue={academySettings.pageTitle} required /></label>
-          <label className="admin-field--wide"><span>Introduction</span><textarea name="introText" defaultValue={academySettings.introText} rows={3} required /></label>
-          <label><span>Question d’ouverture</span><input name="registrationQuestion" defaultValue={academySettings.registrationQuestion} required /></label>
-          <label><span>Choix parent</span><input name="guardianModeLabel" defaultValue={academySettings.guardianModeLabel} required /></label>
-          <label><span>Choix joueur majeur</span><input name="adultModeLabel" defaultValue={academySettings.adultModeLabel} required /></label>
-          <label className="admin-field--wide"><span>Règle pour les mineurs</span><textarea name="guardianPolicyText" defaultValue={academySettings.guardianPolicyText} rows={2} required /></label>
-          <label className="admin-field--wide"><span>Règle pour les majeurs et la CIN</span><textarea name="adultPolicyText" defaultValue={academySettings.adultPolicyText} rows={2} required /></label>
-          <label className="admin-field--wide"><span>Aide du compte</span><textarea name="accountHelpText" defaultValue={academySettings.accountHelpText} rows={2} required /></label>
-          <label className="admin-field--wide"><span>Texte d’éligibilité</span><textarea name="eligibilityText" defaultValue={academySettings.eligibilityText} rows={2} required /></label>
-          <label className="admin-field--wide"><span>Texte de consentement</span><textarea name="consentText" defaultValue={academySettings.consentText} rows={3} required /></label>
-          <label><span>Réassurance données</span><input name="trustDataText" defaultValue={academySettings.trustDataText} required /></label>
-          <label><span>Réassurance famille</span><input name="trustFamilyText" defaultValue={academySettings.trustFamilyText} required /></label>
-          <AdminSubmitButton className="admin-button admin-button--primary admin-field--wide">Enregistrer la page d’inscription</AdminSubmitButton>
-        </form>
-      </section>
+      <nav className="admin-content-priority" aria-label="Sections du contenu">
+        {contentSections.map(({ href, label, icon: Icon }, index) => (
+          <a href={href} key={href}>
+            <span>{String(index + 1).padStart(2, "0")}</span>
+            <Icon aria-hidden="true" size={17} />
+            {label}
+          </a>
+        ))}
+      </nav>
 
       <form action={saveSiteContentAction} className="admin-editor-form">
-        <section className="admin-panel">
+        <section className="admin-panel admin-content-section" id="contenu-accueil">
           <div className="admin-panel__heading">
-            <div><span>01</span><h2>Bandeau et accueil</h2></div>
-            <p>Les messages visibles dès l’arrivée sur le site.</p>
+            <div><span>01</span><h2>Accueil et identité</h2></div>
+            <p>Les messages les plus visibles dès l’arrivée sur le site.</p>
           </div>
           <div className="admin-form-grid">
             <InputField label="Bandeau gauche" name="stripPrimary" value={content.stripPrimary} />
@@ -87,39 +80,32 @@ export default async function AdminContentPage({
           </div>
         </section>
 
-        <section className="admin-panel">
+        <section className="admin-panel admin-content-section" id="contenu-academie">
           <div className="admin-panel__heading">
-            <div><span>03</span><h2>Images du site</h2></div>
-            <p>Prévisualisez l’image actuelle, indiquez une URL ou importez un nouveau fichier.</p>
+            <div><span>02</span><h2>Inscription Académie</h2></div>
+            <p>Saison et textes du formulaire public de candidature.</p>
           </div>
           <div className="admin-form-grid">
-            <AdminImageField label="Écusson couleur" name="crestColorUrl" value={content.crestColorUrl} required />
-            <AdminImageField label="Écusson blanc" name="crestWhiteUrl" value={content.crestWhiteUrl} required />
-            <AdminImageField label="Fond de connexion" name="adminLoginImageUrl" value={content.adminLoginImageUrl} required />
-            <AdminImageField label="Hero de l’accueil" name="homeHeroImageUrl" value={content.homeHeroImageUrl} required />
-            <InputField label="Texte alternatif du hero" name="homeHeroImageAlt" value={content.homeHeroImageAlt} />
-            <AdminImageField label="Image du manifeste" name="homeManifestoImageUrl" value={content.homeManifestoImageUrl} required />
-            <InputField label="Texte alternatif du manifeste" name="homeManifestoImageAlt" value={content.homeManifestoImageAlt} />
-            <AdminImageField label="Bannière Équipe" name="teamHeaderImageUrl" value={content.teamHeaderImageUrl} required />
-            <InputField label="Texte alternatif Équipe" name="teamHeaderImageAlt" value={content.teamHeaderImageAlt} />
-            <AdminImageField label="Bannière Matchs" name="matchesHeaderImageUrl" value={content.matchesHeaderImageUrl} required />
-            <InputField label="Texte alternatif Matchs" name="matchesHeaderImageAlt" value={content.matchesHeaderImageAlt} />
-            <AdminImageField label="Bannière Classement" name="standingsHeaderImageUrl" value={content.standingsHeaderImageUrl} required />
-            <InputField label="Texte alternatif Classement" name="standingsHeaderImageAlt" value={content.standingsHeaderImageAlt} />
-            <AdminImageField label="Bannière Club" name="clubHeaderImageUrl" value={content.clubHeaderImageUrl} required />
-            <InputField label="Texte alternatif Club" name="clubHeaderImageAlt" value={content.clubHeaderImageAlt} />
-            <AdminImageField label="Bannière Médias" name="mediaHeaderImageUrl" value={content.mediaHeaderImageUrl} required />
-            <InputField label="Texte alternatif Médias" name="mediaHeaderImageAlt" value={content.mediaHeaderImageAlt} />
-            <AdminImageField label="Image des réseaux sociaux" name="mediaSocialImageUrl" value={content.mediaSocialImageUrl} required />
-            <InputField label="Texte alternatif réseaux sociaux" name="mediaSocialImageAlt" value={content.mediaSocialImageAlt} />
-            <AdminImageField label="Image média de secours" name="mediaFallbackImageUrl" value={content.mediaFallbackImageUrl} required />
+            <label><span>Saison des candidatures</span><input name="seasonLabel" defaultValue={academySettings.seasonLabel} pattern="\d{4}/\d{4}" required /></label>
+            <label><span>Titre de la page</span><input name="pageTitle" defaultValue={academySettings.pageTitle} required /></label>
+            <label className="admin-field--wide"><span>Introduction</span><textarea name="introText" defaultValue={academySettings.introText} rows={3} required /></label>
+            <label><span>Question d’ouverture</span><input name="registrationQuestion" defaultValue={academySettings.registrationQuestion} required /></label>
+            <label><span>Choix parent</span><input name="guardianModeLabel" defaultValue={academySettings.guardianModeLabel} required /></label>
+            <label><span>Choix joueur majeur</span><input name="adultModeLabel" defaultValue={academySettings.adultModeLabel} required /></label>
+            <label className="admin-field--wide"><span>Règle pour les mineurs</span><textarea name="guardianPolicyText" defaultValue={academySettings.guardianPolicyText} rows={2} required /></label>
+            <label className="admin-field--wide"><span>Règle pour les majeurs et la CIN</span><textarea name="adultPolicyText" defaultValue={academySettings.adultPolicyText} rows={2} required /></label>
+            <label className="admin-field--wide"><span>Aide du compte</span><textarea name="accountHelpText" defaultValue={academySettings.accountHelpText} rows={2} required /></label>
+            <label className="admin-field--wide"><span>Texte d’éligibilité</span><textarea name="eligibilityText" defaultValue={academySettings.eligibilityText} rows={2} required /></label>
+            <label className="admin-field--wide"><span>Texte de consentement</span><textarea name="consentText" defaultValue={academySettings.consentText} rows={3} required /></label>
+            <label><span>Réassurance données</span><input name="trustDataText" defaultValue={academySettings.trustDataText} required /></label>
+            <label><span>Réassurance famille</span><input name="trustFamilyText" defaultValue={academySettings.trustFamilyText} required /></label>
           </div>
         </section>
 
-        <section className="admin-panel">
+        <section className="admin-panel admin-content-section" id="contenu-club">
           <div className="admin-panel__heading">
-            <div><span>02</span><h2>Histoire du club</h2></div>
-            <p>Présentation et repères chronologiques.</p>
+            <div><span>03</span><h2>Histoire du club</h2></div>
+            <p>Présentation, repères chronologiques et stade.</p>
           </div>
           <div className="admin-form-grid">
             <InputField label="Titre d’introduction" name="clubIntroTitle" value={content.clubIntroTitle} />
@@ -142,9 +128,10 @@ export default async function AdminContentPage({
           </div>
         </section>
 
-        <section className="admin-panel">
+        <section className="admin-panel admin-content-section" id="contenu-liens">
           <div className="admin-panel__heading">
             <div><span>04</span><h2>Liens et pied de page</h2></div>
+            <p>Signature du club et accès vers les réseaux officiels.</p>
           </div>
           <div className="admin-form-grid">
             <TextAreaField label="Signature du pied de page" name="footerStatement" value={content.footerStatement} />
@@ -153,9 +140,38 @@ export default async function AdminContentPage({
           </div>
         </section>
 
+        <section className="admin-panel admin-content-section" id="contenu-images">
+          <div className="admin-panel__heading">
+            <div><span>05</span><h2>Images du site</h2></div>
+            <p>Écussons, visuels d’accueil et bannières des rubriques.</p>
+          </div>
+          <div className="admin-form-grid">
+            <AdminImageField label="Écusson couleur" name="crestColorUrl" value={content.crestColorUrl} required />
+            <AdminImageField label="Écusson blanc" name="crestWhiteUrl" value={content.crestWhiteUrl} required />
+            <AdminImageField label="Hero de l’accueil" name="homeHeroImageUrl" value={content.homeHeroImageUrl} required />
+            <InputField label="Texte alternatif du hero" name="homeHeroImageAlt" value={content.homeHeroImageAlt} />
+            <AdminImageField label="Image du manifeste" name="homeManifestoImageUrl" value={content.homeManifestoImageUrl} required />
+            <InputField label="Texte alternatif du manifeste" name="homeManifestoImageAlt" value={content.homeManifestoImageAlt} />
+            <AdminImageField label="Bannière Équipe" name="teamHeaderImageUrl" value={content.teamHeaderImageUrl} required />
+            <InputField label="Texte alternatif Équipe" name="teamHeaderImageAlt" value={content.teamHeaderImageAlt} />
+            <AdminImageField label="Bannière Matchs" name="matchesHeaderImageUrl" value={content.matchesHeaderImageUrl} required />
+            <InputField label="Texte alternatif Matchs" name="matchesHeaderImageAlt" value={content.matchesHeaderImageAlt} />
+            <AdminImageField label="Bannière Classement" name="standingsHeaderImageUrl" value={content.standingsHeaderImageUrl} required />
+            <InputField label="Texte alternatif Classement" name="standingsHeaderImageAlt" value={content.standingsHeaderImageAlt} />
+            <AdminImageField label="Bannière Club" name="clubHeaderImageUrl" value={content.clubHeaderImageUrl} required />
+            <InputField label="Texte alternatif Club" name="clubHeaderImageAlt" value={content.clubHeaderImageAlt} />
+            <AdminImageField label="Bannière Médias" name="mediaHeaderImageUrl" value={content.mediaHeaderImageUrl} required />
+            <InputField label="Texte alternatif Médias" name="mediaHeaderImageAlt" value={content.mediaHeaderImageAlt} />
+            <AdminImageField label="Image des réseaux sociaux" name="mediaSocialImageUrl" value={content.mediaSocialImageUrl} required />
+            <InputField label="Texte alternatif réseaux sociaux" name="mediaSocialImageAlt" value={content.mediaSocialImageAlt} />
+            <AdminImageField label="Fond de connexion" name="adminLoginImageUrl" value={content.adminLoginImageUrl} required />
+            <AdminImageField label="Image média de secours" name="mediaFallbackImageUrl" value={content.mediaFallbackImageUrl} required />
+          </div>
+        </section>
+
         <div className="admin-editor-actions">
           <button className="admin-button admin-button--primary" type="submit">
-            <Save aria-hidden="true" size={17} /> Enregistrer et publier
+            <Save aria-hidden="true" size={17} /> Enregistrer et publier tout le contenu
           </button>
         </div>
       </form>
